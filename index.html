@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>[NextVac : Smart Vaccine Program By SVS]</title>
+    <title>.[NextVac : Smart Vaccine Program By SVS]</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Sarabun', sans-serif; background-color: #f1f5f9; padding: 20px; color: #1e293b; margin: 0; }
@@ -12,52 +12,39 @@
         label { font-weight: 600; display: block; margin-top: 15px; font-size: 16px; }
         select, input { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-family: 'Sarabun', sans-serif; font-size: 16px; }
         button.btn-primary { width: 100%; padding: 15px; background: #0284c7; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 18px; margin-top: 25px; cursor: pointer; font-family: 'Sarabun', sans-serif;}
-        button.btn-secondary { padding: 10px 20px; background: #475569; color: white; border: none; border-radius: 8px; cursor: pointer; font-family: 'Sarabun', sans-serif; font-size: 16px; margin-bottom: 20px;}
-        button.btn-print { padding: 10px 20px; background: #16a34a; color: white; border: none; border-radius: 8px; cursor: pointer; font-family: 'Sarabun', sans-serif; font-size: 16px; margin-bottom: 20px; font-weight: bold;}
+        button.btn-print { padding: 10px 20px; background: #16a34a; color: white; border: none; border-radius: 8px; cursor: pointer; font-family: 'Sarabun', sans-serif; font-size: 16px; font-weight: bold;}
         
-        /* สไตล์จำลองกระดาษ A4 */
+        /* สไตล์ A4 */
         .a4-wrapper { display: none; flex-direction: column; align-items: center; }
         .a4-page {
-            width: 210mm;
-            height: 297mm; /* แก้ไขข้อ 2: ล็อกความสูงไม่ให้เกิน 1 หน้า */
-            background: white;
-            box-shadow: 0 0 10px rgba(0,0,0,0.2);
-            margin: 0 auto;
-            padding: 10mm 15mm; /* ลดขอบกระดาษลงเพื่อเพิ่มพื้นที่ */
-            box-sizing: border-box;
-            font-size: 16pt; /* แก้ไขข้อ 1: ขนาดตัวอักษรหลัก 16 */
-            color: black;
-            position: relative;
-            overflow: hidden;
+            width: 210mm; height: 297mm; background: white; margin: 0 auto;
+            padding: 10mm 15mm; box-sizing: border-box; font-size: 16pt; position: relative; overflow: hidden;
         }
-        
-        /* จัดรูปแบบตัวอักษรและตารางใน A4 */
-        .a4-header-text { text-align: center; font-size: 18pt; font-weight: bold; margin-bottom: 15px; } /* แก้ไขข้อ 1: หัวข้อเป็น 18 ตัวหนา */
+        .a4-header-text { text-align: center; font-size: 18pt; font-weight: bold; margin-bottom: 15px; }
         .info-table { width: 100%; margin-bottom: 15px; font-size: 16pt; }
-        .info-table td { padding: 3px 0; }
-        .info-table strong { font-weight: bold; }
-        
         .vaccine-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 16pt; }
         .vaccine-table th, .vaccine-table td { border: 1px solid black; padding: 6px; text-align: center; }
-        .vaccine-table th { background-color: #f1f5f9; font-weight: bold; }
-        .vaccine-table .note-col { text-align: left; padding-left: 10px; font-size: 14pt; } /* แก้ไขข้อ 1: ช่องหมายเหตุเป็น 14 */
+        .vaccine-table .note-col { text-align: left; padding-left: 10px; font-size: 14pt; }
         
         .signature-section { display: flex; justify-content: space-between; margin-top: 30px; font-size: 16pt; }
         .signature-box { text-align: center; width: 45%; }
-        .signature-line { margin-top: 30px; border-top: 1px dashed black; width: 80%; margin-left: auto; margin-right: auto; }
-        
-        .traceability { position: absolute; bottom: 10mm; right: 15mm; font-size: 12pt; color: #475569; text-align: right; }
+        /* แก้ไขข้อ 4: ลายเซ็นเฉพาะผู้จัดการ */
+        .signature-line { margin-top: 35px; border-top: 1px dashed black; width: 80%; margin: 0 auto 5px; }
+        .no-sig-space { margin-top: 40px; }
 
-        /* จัดการการ Print (แก้ไขข้อ 2 และ 4) */
+        /* แก้ไขข้อ 5: Traceability บรรทัดเดียว สีเทาจาง */
+        .traceability { 
+            position: absolute; bottom: 10mm; width: calc(100% - 30mm); left: 15mm;
+            font-size: 11pt; color: #94a3b8; text-align: center; 
+            display: flex; justify-content: center; gap: 20px;
+        }
+
         @media print {
-            @page {
-                size: A4;
-                margin: 0; /* ซ่อน URL และหัว/ท้ายกระดาษที่เบราว์เซอร์แถมมาให้ */
-            }
-            body { background: white; margin: 0; padding: 0; -webkit-print-color-adjust: exact; }
+            @page { size: A4; margin: 0; }
+            body { background: white; margin: 0; padding: 0; }
             .no-print { display: none !important; }
             .a4-wrapper { display: block; }
-            .a4-page { box-shadow: none; width: 210mm; height: 297mm; margin: 0; padding: 15mm; page-break-after: avoid; }
+            .a4-page { width: 210mm; height: 297mm; padding: 15mm; }
         }
     </style>
 </head>
@@ -65,18 +52,14 @@
 
 <div class="container no-print" id="formSection">
     <h2>[NextVac : Smart Vaccine Program By SVS]</h2>
-    <div id="loading" style="text-align:center; font-weight:bold; color:#0369a1;">⏳ กำลังเชื่อมต่อฐานข้อมูล...</div>
+    <div id="loading" style="text-align:center; font-weight:bold; color:#0369a1;">⏳ เชื่อมต่อระบบ...</div>
 
     <form id="mainForm" style="display:none;" onsubmit="generateA4(event)">
         <label>เลือกภาค</label>
-        <select id="regionSelect" onchange="updateFarms()" required>
-            <option value="">-- เลือกภาค --</option>
-        </select>
+        <select id="regionSelect" onchange="updateFarms()" required><option value="">-- เลือกภาค --</option></select>
 
-        <label>ชื่อฟาร์ม (ที่รับสุกร)</label>
-        <select id="farmSelect" required>
-            <option value="">-- กรุณาเลือกภาคก่อน --</option>
-        </select>
+        <label>ชื่อฟาร์ม</label>
+        <select id="farmSelect" required><option value="">-- เลือกภาคก่อน --</option></select>
 
         <label>ประเภทของสุกร</label>
         <select id="swineType" onchange="updatePrograms()" required>
@@ -89,93 +72,65 @@
         </select>
 
         <label>เลือกโปรแกรมวัคซีน</label>
-        <select id="programSelect" required>
-            <option value="">-- กรุณาเลือกประเภทสุกรก่อน --</option>
-        </select>
+        <select id="programSelect" required><option value="">-- เลือกประเภทสุกรก่อน --</option></select>
 
         <div style="background:#f8fafc; padding:15px; border-radius:8px; margin-top:20px; border:1px solid #e2e8f0;">
-            <label style="margin-top:0;">วันที่รับเข้าล่าสุด (อ้างอิงชุดสุดท้าย)</label>
+            <label style="margin-top:0;">วันที่รับเข้าล่าสุด</label>
             <input type="date" id="admissionDate" required>
-
             <label>จำนวนสุกรทั้งหมด (ตัว)</label>
-            <input type="number" id="totalQty" placeholder="เช่น 700" required>
-
-            <label>อายุสุกรแรกรับ (สัปดาห์)</label>
-            <input type="number" id="pigAge" placeholder="เช่น 4" required step="0.1">
+            <input type="number" id="totalQty" required>
+            <label>อายุสุกรรับเข้า (สัปดาห์)</label>
+            <input type="number" id="pigAge" required step="1">
         </div>
-
         <button type="submit" class="btn-primary">สร้างการ์ดโปรแกรมวัคซีน</button>
     </form>
 </div>
 
 <div class="a4-wrapper" id="a4Section">
-    <div class="no-print" style="margin-bottom:20px; width:210mm; display:flex; justify-content:space-between;">
-        <button class="btn-secondary" onclick="backToForm()">⬅️ กลับไปแก้ไข</button>
+    <div class="no-print" style="margin-bottom:20px; width:210mm; display:flex; justify-content:space-between; align-items:center;">
+        <button style="padding:10px; cursor:pointer;" onclick="location.reload()">⬅️ เริ่มใหม่</button>
         <button class="btn-print" onclick="window.print()">🖨️ พิมพ์ / บันทึกเป็น PDF</button>
     </div>
 
-    <div class="a4-page" id="a4Paper">
+    <div class="a4-page">
         <div class="a4-header-text">โปรแกรมวัคซีน : <span id="lblProgName"></span></div>
-        
         <table class="info-table">
-            <tr>
-                <td width="50%"><strong>ชื่อฟาร์ม:</strong> <span id="lblFarm"></span></td>
-                <td width="50%"><strong>ภาค:</strong> <span id="lblRegion"></span></td>
-            </tr>
-            <tr>
-                <td><strong>ประเภทสุกร:</strong> <span id="lblType"></span></td>
-                <td><strong>จำนวน(ตัว)ทั้งหมด:</strong> <span id="lblQty"></span> ตัว</td>
-            </tr>
-            <tr>
-                <td colspan="2"><strong>วันที่รับเข้าล่าสุด:</strong> <span id="lblDate"></span> &nbsp;&nbsp;&nbsp; <strong>อายุแรกรับ:</strong> <span id="lblAge"></span> สัปดาห์</td>
+            <tr><td width="50%"><strong>ชื่อฟาร์ม:</strong> <span id="lblFarm"></span></td><td width="50%"><strong>ภาค:</strong> <span id="lblRegion"></span></td></tr>
+            <tr><td><strong>ประเภทสุกร:</strong> <span id="lblType"></span></td><td><strong>จำนวน(ตัว)ทั้งหมด:</strong> <span id="lblQty"></span> ตัว</td></tr>
+            <tr><td colspan="2"><strong>วันที่รับเข้าล่าสุด:</strong> <span id="lblDate"></span> &nbsp;&nbsp;&nbsp; <strong>อายุรับเข้า:</strong> <span id="lblAge"></span> สัปดาห์</td>
             </tr>
         </table>
 
         <table class="vaccine-table">
-            <thead>
-                <tr>
-                    <th width="18%">วันที่ทำวัคซีน</th>
-                    <th width="12%">อายุ<br>(สัปดาห์)</th>
-                    <th width="15%">วัคซีน</th>
-                    <th width="20%">ยี่ห้อวัคซีน</th>
-                    <th width="25%">หมายเหตุ</th>
-                    <th width="10%">สถานะ</th>
-                </tr>
-            </thead>
-            <tbody id="vaccineTableBody">
-            </tbody>
+            <thead><tr><th width="18%">วันที่ทำวัคซีน</th><th width="12%">อายุ<br>(สัปดาห์)</th><th width="15%">วัคซีน</th><th width="20%">ยี่ห้อวัคซีน</th><th width="25%">หมายเหตุ</th><th width="10%">สถานะ</th></tr></thead>
+            <tbody id="vaccineTableBody"></tbody>
         </table>
 
         <div class="signature-section">
             <div class="signature-box">
-                <div class="signature-line"></div>
-                <div>( น.สพ. วิทยา ทะสุยะ )</div>
+                <div class="no-sig-space"></div>
+                <div>( <span id="lblVetName"></span> )</div>
                 <div>สัตวแพทย์ผู้ควบคุมฟาร์ม</div>
-                <div style="margin-top:10px;">วันที่ _______/_______/_______</div>
+                <div style="margin-top:5px;">วันที่ _______/_______/_______</div>
             </div>
             <div class="signature-box">
                 <div class="signature-line"></div>
-                <div>(......................................................)</div>
+                <div>( <span id="lblManagerName"></span> )</div>
                 <div>ผู้จัดการฟาร์ม</div>
-                <div style="margin-top:10px;">วันที่ _______/_______/_______</div>
+                <div style="margin-top:5px;">วันที่ _______/_______/_______</div>
             </div>
         </div>
 
         <div class="traceability">
-            พิมพ์เมื่อ: <span id="lblPrintDate"></span><br>
-            รหัสเอกสาร: <span id="lblRefId"></span>
+            <span>พิมพ์เมื่อ: <span id="lblPrintDate"></span></span>
+            <span>รหัสเอกสาร: <span id="lblRefId"></span></span>
         </div>
     </div>
 </div>
 
 <script>
-    // ==========================================
-    // ⚠️ นำ URL เว็บแอปจาก Google Apps Script มาวางที่นี่ครับ
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw-pvzJEp38w_bFhal93iDQI2MLhdEZZeZ38geKDtVRDEOUQfJBQRdSE6KBHETPfoZx/exec';
-    // ==========================================
-    
     let masterData = { regions: {}, programs: [] };
-    const defaultTitle = "[NextVac : Smart Vaccine Program By SVS]";
 
     window.onload = async () => {
         try {
@@ -183,20 +138,13 @@
                 fetch(SCRIPT_URL + "?action=getRegionsAndFarms").then(r => r.json()),
                 fetch(SCRIPT_URL + "?action=getPrograms").then(r => r.json())
             ]);
-            
             masterData.regions = regRes.data;
             masterData.programs = progRes.data;
-
             const regSelect = document.getElementById('regionSelect');
-            Object.keys(masterData.regions).forEach(reg => {
-                regSelect.add(new Option(reg, reg));
-            });
-
+            Object.keys(masterData.regions).forEach(reg => regSelect.add(new Option(reg, reg)));
             document.getElementById('loading').style.display = 'none';
             document.getElementById('mainForm').style.display = 'block';
-        } catch (e) {
-            document.getElementById('loading').innerText = "❌ เกิดข้อผิดพลาดในการโหลดข้อมูล";
-        }
+        } catch (e) { document.getElementById('loading').innerText = "❌ ระบบขัดข้อง"; }
     };
 
     function updateFarms() {
@@ -204,7 +152,12 @@
         const farmSelect = document.getElementById('farmSelect');
         farmSelect.innerHTML = '<option value="">-- เลือกฟาร์ม --</option>';
         if (region && masterData.regions[region]) {
-            masterData.regions[region].forEach(f => farmSelect.add(new Option(f, f)));
+            masterData.regions[region].forEach(f => {
+                let opt = new Option(f.name, f.name);
+                opt.dataset.vet = f.vet;
+                opt.dataset.manager = f.manager;
+                farmSelect.add(opt);
+            });
         }
     }
 
@@ -212,30 +165,18 @@
         const type = document.getElementById('swineType').value;
         const progSelect = document.getElementById('programSelect');
         progSelect.innerHTML = '<option value="">-- เลือกโปรแกรม --</option>';
-        
         const filtered = masterData.programs.filter(p => p.type === type);
-        const uniquePrograms = [];
         const seenIds = new Set();
-        
         filtered.forEach(p => {
-            if (!seenIds.has(p.id)) {
-                seenIds.add(p.id);
-                uniquePrograms.push(p);
-            }
-        });
-
-        uniquePrograms.forEach(p => {
-            progSelect.add(new Option(p.name, p.id)); 
+            if (!seenIds.has(p.id)) { seenIds.add(p.id); progSelect.add(new Option(p.name, p.id)); }
         });
     }
 
-    // ฟังก์ชันแปลงวันที่รูปแบบย่อ (DD/MM/YYYY)
     function formatDateThai(dateStr) {
         const d = new Date(dateStr);
         return d.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
     }
 
-    // แก้ไขข้อ 5: ฟังก์ชันแปลงวันที่รูปแบบเต็ม (วันพุธ ที่ 1 เมษายน พ.ศ.2569)
     function getFullThaiDate(dateStr) {
         const d = new Date(dateStr);
         const days = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
@@ -245,78 +186,60 @@
 
     function generateA4(e) {
         e.preventDefault();
-        
-        const farm = document.getElementById('farmSelect').value;
+        const farmOpt = document.getElementById('farmSelect').options[document.getElementById('farmSelect').selectedIndex];
+        const farm = farmOpt.value;
         const region = document.getElementById('regionSelect').value;
-        const typeSelect = document.getElementById('swineType');
-        const typeText = typeSelect.options[typeSelect.selectedIndex].text;
-        const safeType = typeText.split(' : ')[0]; // เช่น "หย่านม-ขุน"
-        
+        const typeText = document.getElementById('swineType').value.split(' : ')[0];
         const progSelect = document.getElementById('programSelect');
         const progId = progSelect.value;
         const progName = progSelect.options[progSelect.selectedIndex].text;
-        
         const admDate = document.getElementById('admissionDate').value;
         const qty = document.getElementById('totalQty').value;
-        const initialAge = parseFloat(document.getElementById('pigAge').value);
+        const initialAge = parseInt(document.getElementById('pigAge').value);
 
-        // แปะข้อมูลลงกระดาษ
         document.getElementById('lblProgName').innerText = progName;
         document.getElementById('lblFarm').innerText = farm;
         document.getElementById('lblRegion').innerText = region;
-        document.getElementById('lblType').innerText = safeType;
+        document.getElementById('lblType').innerText = typeText;
         document.getElementById('lblQty').innerText = qty;
-        
-        // ใช้รูปแบบวันที่เต็ม
         document.getElementById('lblDate').innerText = getFullThaiDate(admDate);
         document.getElementById('lblAge').innerText = initialAge;
+        document.getElementById('lblVetName').innerText = farmOpt.dataset.vet || "น.สพ. วิทยา ทะสุยะ";
+        document.getElementById('lblManagerName').innerText = farmOpt.dataset.manager || "......................................................";
 
-        // วาดตารางวัคซีน
         const tbody = document.getElementById('vaccineTableBody');
         tbody.innerHTML = '';
-        
-        const progRows = masterData.programs.filter(p => p.id === progId);
-        progRows.sort((a, b) => a.offset - b.offset);
-
+        const progRows = masterData.programs.filter(p => p.id === progId).sort((a, b) => a.offset - b.offset);
         const baseDateObj = new Date(admDate);
+        let lastDate = "";
 
         progRows.forEach(row => {
             const targetDateObj = new Date(baseDateObj);
             targetDateObj.setDate(targetDateObj.getDate() + parseInt(row.offset));
-            const calculatedAge = initialAge + (parseInt(row.offset) / 7);
+            const dateDisplay = formatDateThai(targetDateObj);
+            
+            // แก้ไขข้อ 2: อายุสุกรไม่มีทศนิยม
+            const calculatedAge = Math.floor(initialAge + (parseInt(row.offset) / 7));
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td>${formatDateThai(targetDateObj)}</td>
-                <td>${calculatedAge.toFixed(1)}</td>
+                <td>${dateDisplay === lastDate ? "" : dateDisplay}</td> <td>${calculatedAge}</td>
                 <td>${row.vacType || '-'}</td>
                 <td>${row.tradeName || '-'}</td>
-                <td class="note-col">${row.note || ''}</td> <td></td>
+                <td class="note-col">${row.note || ''}</td>
+                <td></td>
             `;
             tbody.appendChild(tr);
+            lastDate = dateDisplay;
         });
 
         const today = new Date();
         document.getElementById('lblPrintDate').innerText = formatDateThai(today) + " " + today.toLocaleTimeString('th-TH');
         document.getElementById('lblRefId').innerText = `REF-${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}-${Math.floor(1000 + Math.random() * 9000)}`;
-
-        // แก้ไขข้อ 3: ตั้งชื่อไฟล์ PDF อัตโนมัติ (ดัดแปลง Document Title ชั่วคราว)
-        const fileAdmDate = formatDateThai(admDate).replace(/\//g, '-');
-        const fileTodayDate = formatDateThai(today).replace(/\//g, '-');
-        const dynamicFileName = `${farm}_${safeType}_${progName}_${fileAdmDate}_${fileTodayDate}`;
-        document.title = dynamicFileName;
-
+        document.title = `${farm}_${typeText}_${progName}_${formatDateThai(admDate).replace(/\//g,'-')}`;
         document.getElementById('formSection').style.display = 'none';
         document.getElementById('a4Section').style.display = 'flex';
     }
-
-    function backToForm() {
-        // คืนค่า Title เดิมเมื่อกลับหน้าแรก
-        document.title = defaultTitle;
-        document.getElementById('a4Section').style.display = 'none';
-        document.getElementById('formSection').style.display = 'block';
-    }
 </script>
-
 </body>
 </html>
