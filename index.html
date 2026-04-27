@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NextVac - Smart Swine Vaccine System</title>
+    <title>.NextVac - Smart Swine Vaccine System</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Sarabun', sans-serif; background-color: #f1f5f9; padding: 20px; color: #1e293b; }
@@ -109,9 +109,24 @@
         const progSelect = document.getElementById('programSelect');
         progSelect.innerHTML = '<option value="">-- เลือกโปรแกรม --</option>';
         
-        // กรองโปรแกรมที่ตรงกับประเภทสุกรที่เลือก
+        // 1. กรองเอาเฉพาะโปรแกรมที่ตรงกับประเภทสุกรที่เลือก
         const filtered = masterData.programs.filter(p => p.type === type);
-        filtered.forEach(p => progSelect.add(new Option(`${p.type} : ${p.name}`, p.id)));
+        
+        // 2. คัดกรองไม่ให้ชื่อโปรแกรมซ้ำกัน (Group by Program_ID)
+        const uniquePrograms = [];
+        const seenIds = new Set();
+        
+        filtered.forEach(p => {
+            if (!seenIds.has(p.id)) {
+                seenIds.add(p.id);
+                uniquePrograms.push(p); // เก็บเฉพาะรายการแรกที่เจอ
+            }
+        });
+
+        // 3. นำชื่อโปรแกรมที่ไม่ซ้ำมาแสดง (แสดงแค่ Program_Name)
+        uniquePrograms.forEach(p => {
+            progSelect.add(new Option(p.name, p.id)); 
+        });
     }
 </script>
 
