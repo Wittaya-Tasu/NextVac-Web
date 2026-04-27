@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NextVac - Smart Swine Vaccine System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #f0f4f8;
+            color: #334155;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: #0369a1; /* สีน้ำเงินการแพทย์ */
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+        }
+        label {
+            font-weight: 600;
+            margin-top: 15px;
+            display: block;
+        }
+        select, input, button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #cbd5e1;
+            border-radius: 5px;
+            font-family: 'Sarabun', sans-serif;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #0284c7;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 25px;
+            cursor: pointer;
+            border: none;
+            transition: 0.3s;
+        }
+        button:hover { background-color: #0369a1; }
+        #loading { color: #d97706; font-weight: bold; text-align: center; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>💉 NextVac</h1>
+        <p>ระบบบริหารจัดการโปรแกรมวัคซีนสุกรอัจฉริยะ</p>
+    </div>
+
+    <div class="container">
+        <div id="loading">⏳ กำลังเชื่อมต่อฐานข้อมูล...</div>
+
+        <form id="vaccineForm" style="display: none;">
+            <label for="farmName">ชื่อฟาร์ม (รับสุกร)</label>
+            <input type="text" id="farmName" placeholder="เช่น ฟาร์มทดสอบ A" required>
+
+            <label for="swineType">ประเภทของสุกร</label>
+            <select id="swineType">
+                <option value="ลูกสุกรหย่านม">ลูกสุกรหย่านม</option>
+                <option value="สุกรสาว">สุกรสาว</option>
+                <option value="สุกรขุน">สุกรขุน</option>
+            </select>
+
+            <label for="vaccineSelect">เลือกวัคซีน (ดึงจาก Master)</label>
+            <select id="vaccineSelect" required>
+                <option value="">-- กรุณาเลือกวัคซีน --</option>
+            </select>
+
+            <label for="admissionDate">วันที่รับเข้า</label>
+            <input type="date" id="admissionDate" required>
+
+            <button type="submit">สร้างการ์ดโปรแกรมวัคซีน</button>
+        </form>
+    </div>
+
+    <script>
+        // ==========================================
+        // ⚠️ เอา Web App URL จากสเตป 4 มาวางในเครื่องหมายคำพูดด้านล่างนี้เลยครับ
+        // ==========================================
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw-pvzJEp38w_bFhal93iDQI2MLhdEZZeZ38geKDtVRDEOUQfJBQRdSE6KBHETPfoZx/exec';
+
+        // โหลดข้อมูลรายชื่อวัคซีนตอนเปิดเว็บ
+        window.onload = function() {
+            fetch(SCRIPT_URL + "?action=getVaccines")
+            .then(response => response.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    const select = document.getElementById('vaccineSelect');
+                    data.data.forEach(item => {
+                        let option = document.createElement('option');
+                        option.value = item.trade_name;
+                        option.text = `[${item.category}] ${item.trade_name} - ${item.dose}`;
+                        select.appendChild(option);
+                    });
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('vaccineForm').style.display = 'block';
+                }
+            })
+            .catch(error => {
+                document.getElementById('loading').innerText = "❌ เชื่อมต่อฐานข้อมูลไม่สำเร็จ กรุณาตรวจสอบ URL";
+                document.getElementById('loading').style.color = "red";
+            });
+        };
+
+        // เมื่อกดปุ่มสร้างการ์ด (จำลองไว้สำหรับขั้นตอนต่อไป)
+        document.getElementById('vaccineForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            alert("ระบบเตรียมข้อมูลสำเร็จ! (ฟังก์ชันสร้าง A4 จะมาในอัปเดตถัดไป)");
+        });
+    </script>
+</body>
+</html>
