@@ -3,39 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>.NextVac - Smart Swine Vaccine System</title>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
+    <title>NextVac - Smart Swine Vaccine System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Sarabun', sans-serif; background-color: #f1f5f9; padding: 20px; color: #1e293b; }
+        /* สไตล์สำหรับหน้าจอทั่วไป */
+        body { font-family: 'Sarabun', sans-serif; background-color: #f1f5f9; padding: 20px; color: #1e293b; margin: 0; }
         .container { max-width: 600px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
-        h2 { color: #0369a1; text-align: center; margin-top: 0; }
-        label { font-weight: 600; display: block; margin-top: 15px; font-size: 14px; }
-        select, input { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; }
-        .round-box { border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-top: 15px; background: #f8fafc; }
-        .round-title { font-weight: bold; color: #64748b; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; margin-bottom: 10px; }
-        button { width: 100%; padding: 15px; background: #0284c7; color: white; border: none; border-radius: 8px; font-weight: bold; margin-top: 20px; cursor: pointer; }
-        #loading { text-align: center; color: #0284c7; font-weight: bold; }
+        h2 { color: #0369a1; text-align: center; margin-top: 0; font-weight: 700; }
+        label { font-weight: 600; display: block; margin-top: 15px; font-size: 16px; }
+        select, input { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-family: 'Sarabun', sans-serif; font-size: 16px; }
+        button.btn-primary { width: 100%; padding: 15px; background: #0284c7; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 18px; margin-top: 25px; cursor: pointer; font-family: 'Sarabun', sans-serif;}
+        button.btn-secondary { padding: 10px 20px; background: #475569; color: white; border: none; border-radius: 8px; cursor: pointer; font-family: 'Sarabun', sans-serif; font-size: 16px; margin-bottom: 20px;}
+        button.btn-print { padding: 10px 20px; background: #16a34a; color: white; border: none; border-radius: 8px; cursor: pointer; font-family: 'Sarabun', sans-serif; font-size: 16px; margin-bottom: 20px; font-weight: bold;}
+        
+        /* สไตล์จำลองกระดาษ A4 */
+        .a4-wrapper { display: none; flex-direction: column; align-items: center; }
+        .a4-page {
+            width: 210mm;
+            min-height: 297mm;
+            background: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            margin: 0 auto;
+            padding: 15mm;
+            box-sizing: border-box;
+            font-size: 16pt; /* ขนาดตัวอักษรมาตรฐานบน A4 */
+            color: black;
+            position: relative;
+        }
+        
+        /* จัดรูปแบบตารางใน A4 */
+        .a4-header-text { text-align: center; font-size: 22pt; font-weight: bold; margin-bottom: 20px; }
+        .info-table { width: 100%; margin-bottom: 20px; font-size: 16pt; }
+        .info-table td { padding: 5px 0; }
+        .info-table strong { font-weight: 600; }
+        
+        .vaccine-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 16pt; }
+        .vaccine-table th, .vaccine-table td { border: 1px solid black; padding: 8px; text-align: center; }
+        .vaccine-table th { background-color: #f1f5f9; font-weight: bold; }
+        .vaccine-table td.text-left { text-align: left; padding-left: 10px;}
+        
+        .signature-section { display: flex; justify-content: space-between; margin-top: 50px; font-size: 16pt; }
+        .signature-box { text-align: center; width: 45%; }
+        .signature-line { margin-top: 40px; border-top: 1px dashed black; width: 80%; margin-left: auto; margin-right: auto; }
+        
+        .traceability { position: absolute; bottom: 10mm; right: 15mm; font-size: 12pt; color: #475569; text-align: right; }
+
+        /* จัดการการ Print */
+        @media print {
+            body { background: white; margin: 0; padding: 0; }
+            .no-print { display: none !important; }
+            .a4-wrapper { display: block; }
+            .a4-page { box-shadow: none; width: 100%; margin: 0; padding: 0; }
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
+<div class="container no-print" id="formSection">
     <h2>💉 NextVac System</h2>
-    <div id="loading">กำลังเตรียมข้อมูลระบบ...</div>
+    <div id="loading" style="text-align:center; font-weight:bold; color:#0369a1;">⏳ กำลังเชื่อมต่อฐานข้อมูล...</div>
 
-    <form id="mainForm" style="display:none;">
+    <form id="mainForm" style="display:none;" onsubmit="generateA4(event)">
         <label>เลือกภาค</label>
-        <select id="regionSelect" onchange="updateFarms()">
+        <select id="regionSelect" onchange="updateFarms()" required>
             <option value="">-- เลือกภาค --</option>
         </select>
 
         <label>ชื่อฟาร์ม (ที่รับสุกร)</label>
-        <select id="farmSelect">
+        <select id="farmSelect" required>
             <option value="">-- กรุณาเลือกภาคก่อน --</option>
         </select>
 
         <label>ประเภทของสุกร</label>
-        <select id="swineType" onchange="updatePrograms()">
+        <select id="swineType" onchange="updatePrograms()" required>
             <option value="">-- เลือกประเภท --</option>
             <option value="หย่านม-ขุน : Wean-Finish">หย่านม-ขุน : Wean-Finish</option>
             <option value="อนุบาล-ขุน : Nursery-Finish">อนุบาล-ขุน : Nursery-Finish</option>
@@ -45,32 +85,92 @@
         </select>
 
         <label>เลือกโปรแกรมวัคซีน</label>
-        <select id="programSelect">
+        <select id="programSelect" required>
             <option value="">-- กรุณาเลือกประเภทสุกรก่อน --</option>
         </select>
 
-        <div class="round-box">
-            <div class="round-title">การรับเข้าครั้งที่ 1</div>
-            <label>วันที่รับเข้า</label>
-            <input type="date" id="date1">
-            <label>จำนวนสุกร (ตัว)</label>
-            <input type="number" id="qty1" placeholder="เช่น 350">
+        <div style="background:#f8fafc; padding:15px; border-radius:8px; margin-top:20px; border:1px solid #e2e8f0;">
+            <label style="margin-top:0;">วันที่รับเข้า (อ้างอิงวันรับเข้าล่าสุด)</label>
+            <input type="date" id="admissionDate" required>
+
+            <label>จำนวนสุกรทั้งหมด (ตัว)</label>
+            <input type="number" id="totalQty" placeholder="เช่น 700" required>
+
+            <label>อายุสุกรแรกรับ (สัปดาห์)</label>
+            <input type="number" id="pigAge" placeholder="เช่น 4" required step="0.1">
         </div>
 
-        <div class="round-box">
-            <div class="round-title">การรับเข้าครั้งที่ 2 (ถ้ามี)</div>
-            <label>วันที่รับเข้า</label>
-            <input type="date" id="date2">
-            <label>จำนวนสุกร (ตัว)</label>
-            <input type="number" id="qty2" placeholder="เช่น 350">
-        </div>
-
-        <button type="submit">บันทึกและสร้างการ์ดโปรแกรม</button>
+        <button type="submit" class="btn-primary">สร้างการ์ดโปรแกรมวัคซีน</button>
     </form>
 </div>
 
+<div class="a4-wrapper" id="a4Section">
+    <div class="no-print" style="margin-bottom:20px; width:210mm; display:flex; justify-content:space-between;">
+        <button class="btn-secondary" onclick="backToForm()">⬅️ กลับไปแก้ไข</button>
+        <button class="btn-print" onclick="window.print()">🖨️ พิมพ์ / บันทึกเป็น PDF</button>
+    </div>
+
+    <div class="a4-page" id="a4Paper">
+        <div class="a4-header-text">โปรแกรมวัคซีน : <span id="lblProgName"></span></div>
+        
+        <table class="info-table">
+            <tr>
+                <td width="50%"><strong>ชื่อฟาร์ม:</strong> <span id="lblFarm"></span></td>
+                <td width="50%"><strong>ภาค:</strong> <span id="lblRegion"></span></td>
+            </tr>
+            <tr>
+                <td><strong>ประเภทสุกร:</strong> <span id="lblType"></span></td>
+                <td><strong>จำนวน(ตัว)ทั้งหมด:</strong> <span id="lblQty"></span> ตัว</td>
+            </tr>
+            <tr>
+                <td><strong>วันที่รับเข้าล่าสุด:</strong> <span id="lblDate"></span></td>
+                <td><strong>อายุแรกรับ:</strong> <span id="lblAge"></span> สัปดาห์</td>
+            </tr>
+        </table>
+
+        <table class="vaccine-table">
+            <thead>
+                <tr>
+                    <th width="18%">วันที่ทำวัคซีน</th>
+                    <th width="12%">อายุ<br>(สัปดาห์)</th>
+                    <th width="15%">วัคซีน</th>
+                    <th width="20%">ยี่ห้อวัคซีน</th>
+                    <th width="25%">หมายเหตุ</th>
+                    <th width="10%">สถานะ</th>
+                </tr>
+            </thead>
+            <tbody id="vaccineTableBody">
+                </tbody>
+        </table>
+
+        <div class="signature-section">
+            <div class="signature-box">
+                <div class="signature-line"></div>
+                <div>( น.สพ. วิทยา ทะสุยะ )</div>
+                <div>สัตวแพทย์ผู้ควบคุมฟาร์ม</div>
+                <div style="margin-top:10px;">วันที่ _______/_______/_______</div>
+            </div>
+            <div class="signature-box">
+                <div class="signature-line"></div>
+                <div>(......................................................)</div>
+                <div>ผู้จัดการฟาร์ม</div>
+                <div style="margin-top:10px;">วันที่ _______/_______/_______</div>
+            </div>
+        </div>
+
+        <div class="traceability">
+            พิมพ์เมื่อ: <span id="lblPrintDate"></span><br>
+            รหัสเอกสาร: <span id="lblRefId"></span>
+        </div>
+    </div>
+</div>
+
 <script>
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw-pvzJEp38w_bFhal93iDQI2MLhdEZZeZ38geKDtVRDEOUQfJBQRdSE6KBHETPfoZx/exec';
+    // ==========================================
+    // ⚠️ นำ URL เว็บแอปจาก สเตป 4 มาวางที่นี่ครับ
+    // ==========================================
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwpvzJEp38w_bFhal93iDQI2MLhdEZZeZ38geKDtVRDEOUQfJBQRdSE6KBHETPfoZx/exec';
+    
     let masterData = { regions: {}, programs: [] };
 
     window.onload = async () => {
@@ -109,24 +209,96 @@
         const progSelect = document.getElementById('programSelect');
         progSelect.innerHTML = '<option value="">-- เลือกโปรแกรม --</option>';
         
-        // 1. กรองเอาเฉพาะโปรแกรมที่ตรงกับประเภทสุกรที่เลือก
         const filtered = masterData.programs.filter(p => p.type === type);
-        
-        // 2. คัดกรองไม่ให้ชื่อโปรแกรมซ้ำกัน (Group by Program_ID)
         const uniquePrograms = [];
         const seenIds = new Set();
         
         filtered.forEach(p => {
             if (!seenIds.has(p.id)) {
                 seenIds.add(p.id);
-                uniquePrograms.push(p); // เก็บเฉพาะรายการแรกที่เจอ
+                uniquePrograms.push(p);
             }
         });
 
-        // 3. นำชื่อโปรแกรมที่ไม่ซ้ำมาแสดง (แสดงแค่ Program_Name)
         uniquePrograms.forEach(p => {
             progSelect.add(new Option(p.name, p.id)); 
         });
+    }
+
+    // ฟังก์ชันแปลงวันที่เป็นรูปแบบ ไทย DD/MM/YYYY
+    function formatDateThai(dateStr) {
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+
+    // ฟังก์ชันหลักในการสร้างกระดาษ A4
+    function generateA4(e) {
+        e.preventDefault();
+        
+        const farm = document.getElementById('farmSelect').value;
+        const region = document.getElementById('regionSelect').value;
+        const typeSelect = document.getElementById('swineType');
+        const typeText = typeSelect.options[typeSelect.selectedIndex].text;
+        
+        const progSelect = document.getElementById('programSelect');
+        const progId = progSelect.value;
+        const progName = progSelect.options[progSelect.selectedIndex].text;
+        
+        const admDate = document.getElementById('admissionDate').value;
+        const qty = document.getElementById('totalQty').value;
+        const initialAge = parseFloat(document.getElementById('pigAge').value);
+
+        // นำข้อมูลไปแปะใน A4
+        document.getElementById('lblProgName').innerText = progName;
+        document.getElementById('lblFarm').innerText = farm;
+        document.getElementById('lblRegion').innerText = region;
+        document.getElementById('lblType').innerText = typeText.split(' : ')[0]; // เอาเฉพาะภาษาไทย
+        document.getElementById('lblQty').innerText = qty;
+        document.getElementById('lblDate').innerText = formatDateThai(admDate);
+        document.getElementById('lblAge').innerText = initialAge;
+
+        // วาดตารางวัคซีน
+        const tbody = document.getElementById('vaccineTableBody');
+        tbody.innerHTML = '';
+        
+        // ดึงรายการวัคซีนทั้งหมดที่ตรงกับ ID
+        const progRows = masterData.programs.filter(p => p.id === progId);
+        progRows.sort((a, b) => a.offset - b.offset); // เรียงตามวัน offset
+
+        const baseDateObj = new Date(admDate);
+
+        progRows.forEach(row => {
+            // คำนวณวันที่
+            const targetDateObj = new Date(baseDateObj);
+            targetDateObj.setDate(targetDateObj.getDate() + parseInt(row.offset));
+            
+            // คำนวณอายุ (สัปดาห์) โดยปัดเศษทศนิยม 1 ตำแหน่ง
+            const calculatedAge = initialAge + (parseInt(row.offset) / 7);
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${formatDateThai(targetDateObj)}</td>
+                <td>${calculatedAge.toFixed(1)}</td>
+                <td>${row.vacType || '-'}</td>
+                <td>${row.tradeName || '-'}</td>
+                <td class="text-left">${row.note || ''}</td>
+                <td></td> `;
+            tbody.appendChild(tr);
+        });
+
+        // สร้างข้อมูล Traceability
+        const today = new Date();
+        document.getElementById('lblPrintDate').innerText = formatDateThai(today) + " " + today.toLocaleTimeString('th-TH');
+        document.getElementById('lblRefId').innerText = `REF-${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+        // สลับหน้าจอ
+        document.getElementById('formSection').style.display = 'none';
+        document.getElementById('a4Section').style.display = 'flex';
+    }
+
+    function backToForm() {
+        document.getElementById('a4Section').style.display = 'none';
+        document.getElementById('formSection').style.display = 'block';
     }
 </script>
 
