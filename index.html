@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>[NextVac : Smart Vaccine Program By SVS]</title>
+    <title>.[NextVac : Smart Vaccine Program By SVS]</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         /* =======================================================
@@ -12,8 +12,8 @@
         :root {
             --font-size-main: 14pt;      /* ขนาดตัวอักษรหลักทั้งหมดในแบบฟอร์ม */
             --font-size-header: 16pt;    /* ขนาดตัวอักษรหัวข้อ "โปรแกรมวัคซีน: ..." */
-            --font-size-note: 12pt;      /* ขนาดตัวอักษรในช่อง "หมายเหตุ" (ให้เล็กกว่าปกติหน่อยจะได้ไม่ล้น) */
-            --font-size-trace: 10pt;     /* ขนาดตัวอักษรพิมพ์เมื่อ/รหัสเอกสาร (สีเทาด้านล่าง) */
+            --font-size-note: 12pt;      /* ขนาดตัวอักษรในช่อง "หมายเหตุ" */
+            --font-size-trace: 10pt;     /* ขนาดตัวอักษรพิมพ์เมื่อ/รหัสเอกสาร */
         }
         /* ======================================================= */
 
@@ -30,25 +30,29 @@
         .a4-page {
             width: 210mm; height: 297mm; background: white; margin: 0 auto;
             padding: 10mm 15mm; box-sizing: border-box; 
-            font-size: var(--font-size-main); /* ใช้ขนาดตัวอักษรหลักที่ตั้งไว้ด้านบน */
+            font-size: var(--font-size-main);
             position: relative; overflow: hidden; color: black;
+            display: flex; 
+            flex-direction: column; /* เปลี่ยนโครงสร้างให้จัดเรียงจากบนลงล่าง เพื่อดันลายเซ็นลงไป */
         }
         
         /* สไตล์ส่วนหัว */
-        .a4-header-text { text-align: center; font-size: var(--font-size-header); font-weight: bold; margin-bottom: 15px; }
-        .info-table { width: 100%; margin-bottom: 15px; font-size: var(--font-size-main); }
+        .a4-header-text { text-align: center; font-size: var(--font-size-header); font-weight: bold; margin-bottom: 15px; flex-shrink: 0; }
+        .info-table { width: 100%; margin-bottom: 15px; font-size: var(--font-size-main); flex-shrink: 0; }
         
         /* สไตล์ตารางวัคซีน */
-        .vaccine-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: var(--font-size-main); }
+        .vaccine-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: var(--font-size-main); flex-shrink: 0; }
         .vaccine-table th, .vaccine-table td { border: 1px solid black; padding: 6px; text-align: center; }
         .vaccine-table .note-col { text-align: left; padding-left: 10px; font-size: var(--font-size-note); }
         
-        /* สไตล์ส่วนลายเซ็น (จัดระเบียบใหม่ให้ตรงกันเป๊ะ) */
+        /* สไตล์ส่วนลายเซ็น (ปรับให้เหมือนกันและดันลงล่าง) */
         .signature-section { 
             display: flex; 
             justify-content: space-between; 
-            margin-top: 40px; 
+            margin-top: auto; /* ดันลงล่างสุดของพื้นที่ที่เหลือ */
+            margin-bottom: 25px; /* เว้นระยะจากรหัส Traceability ด้านล่าง */
             font-size: var(--font-size-main); 
+            flex-shrink: 0;
         }
         .signature-box { 
             text-align: center; 
@@ -57,9 +61,8 @@
             flex-direction: column; 
             align-items: center; 
         }
-        .sig-space { height: 50px; } /* พื้นที่ว่างด้านบนสำหรับเซ็นชื่อ */
-        .sig-line { border-top: 1px dashed black; width: 80%; margin: 0 auto 5px auto; }
-        .sig-line-hidden { border-top: 1px solid transparent; width: 80%; margin: 0 auto 5px auto; } /* เส้นล่องหนเพื่อให้ความสูงเท่ากัน */
+        .sig-space { height: 50px; } 
+        .sig-line { border-top: 1px dashed black; width: 80%; margin: 0 auto 5px auto; } /* ใช้เส้นประเหมือนกันทั้งสองฝั่ง */
 
         /* สไตล์ Traceability */
         .traceability { 
@@ -148,12 +151,15 @@
 
         <div class="signature-section">
             <div class="signature-box">
-                <div class="sig-space"></div> <div class="sig-line-hidden"></div> <div>( <span id="lblVetName"></span> )</div>
+                <div class="sig-space"></div>
+                <div class="sig-line"></div> <div>( <span id="lblVetName"></span> )</div>
                 <div>สัตวแพทย์ผู้ควบคุมฟาร์ม</div>
                 <div style="margin-top:5px;">วันที่ _______/_______/_______</div>
             </div>
             <div class="signature-box">
-                <div class="sig-space"></div> <div class="sig-line"></div> <div>( <span id="lblManagerName"></span> )</div>
+                <div class="sig-space"></div>
+                <div class="sig-line"></div>
+                <div>( <span id="lblManagerName"></span> )</div>
                 <div>ผู้จัดการฟาร์ม</div>
                 <div style="margin-top:5px;">วันที่ _______/_______/_______</div>
             </div>
