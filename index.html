@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>.NextVac - Smart Swine Vaccine System</title>
+    <title>[NextVac : Smart Vaccine Program By SVS]</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        /* สไตล์สำหรับหน้าจอทั่วไป */
         body { font-family: 'Sarabun', sans-serif; background-color: #f1f5f9; padding: 20px; color: #1e293b; margin: 0; }
         .container { max-width: 600px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
         h2 { color: #0369a1; text-align: center; margin-top: 0; font-weight: 700; }
@@ -20,47 +19,52 @@
         .a4-wrapper { display: none; flex-direction: column; align-items: center; }
         .a4-page {
             width: 210mm;
-            min-height: 297mm;
+            height: 297mm; /* แก้ไขข้อ 2: ล็อกความสูงไม่ให้เกิน 1 หน้า */
             background: white;
             box-shadow: 0 0 10px rgba(0,0,0,0.2);
             margin: 0 auto;
-            padding: 15mm;
+            padding: 10mm 15mm; /* ลดขอบกระดาษลงเพื่อเพิ่มพื้นที่ */
             box-sizing: border-box;
-            font-size: 16pt; /* ขนาดตัวอักษรมาตรฐานบน A4 */
+            font-size: 16pt; /* แก้ไขข้อ 1: ขนาดตัวอักษรหลัก 16 */
             color: black;
             position: relative;
+            overflow: hidden;
         }
         
-        /* จัดรูปแบบตารางใน A4 */
-        .a4-header-text { text-align: center; font-size: 22pt; font-weight: bold; margin-bottom: 20px; }
-        .info-table { width: 100%; margin-bottom: 20px; font-size: 16pt; }
-        .info-table td { padding: 5px 0; }
-        .info-table strong { font-weight: 600; }
+        /* จัดรูปแบบตัวอักษรและตารางใน A4 */
+        .a4-header-text { text-align: center; font-size: 18pt; font-weight: bold; margin-bottom: 15px; } /* แก้ไขข้อ 1: หัวข้อเป็น 18 ตัวหนา */
+        .info-table { width: 100%; margin-bottom: 15px; font-size: 16pt; }
+        .info-table td { padding: 3px 0; }
+        .info-table strong { font-weight: bold; }
         
-        .vaccine-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 16pt; }
-        .vaccine-table th, .vaccine-table td { border: 1px solid black; padding: 8px; text-align: center; }
+        .vaccine-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 16pt; }
+        .vaccine-table th, .vaccine-table td { border: 1px solid black; padding: 6px; text-align: center; }
         .vaccine-table th { background-color: #f1f5f9; font-weight: bold; }
-        .vaccine-table td.text-left { text-align: left; padding-left: 10px;}
+        .vaccine-table .note-col { text-align: left; padding-left: 10px; font-size: 14pt; } /* แก้ไขข้อ 1: ช่องหมายเหตุเป็น 14 */
         
-        .signature-section { display: flex; justify-content: space-between; margin-top: 50px; font-size: 16pt; }
+        .signature-section { display: flex; justify-content: space-between; margin-top: 30px; font-size: 16pt; }
         .signature-box { text-align: center; width: 45%; }
-        .signature-line { margin-top: 40px; border-top: 1px dashed black; width: 80%; margin-left: auto; margin-right: auto; }
+        .signature-line { margin-top: 30px; border-top: 1px dashed black; width: 80%; margin-left: auto; margin-right: auto; }
         
         .traceability { position: absolute; bottom: 10mm; right: 15mm; font-size: 12pt; color: #475569; text-align: right; }
 
-        /* จัดการการ Print */
+        /* จัดการการ Print (แก้ไขข้อ 2 และ 4) */
         @media print {
-            body { background: white; margin: 0; padding: 0; }
+            @page {
+                size: A4;
+                margin: 0; /* ซ่อน URL และหัว/ท้ายกระดาษที่เบราว์เซอร์แถมมาให้ */
+            }
+            body { background: white; margin: 0; padding: 0; -webkit-print-color-adjust: exact; }
             .no-print { display: none !important; }
             .a4-wrapper { display: block; }
-            .a4-page { box-shadow: none; width: 100%; margin: 0; padding: 0; }
+            .a4-page { box-shadow: none; width: 210mm; height: 297mm; margin: 0; padding: 15mm; page-break-after: avoid; }
         }
     </style>
 </head>
 <body>
 
 <div class="container no-print" id="formSection">
-    <h2>💉 NextVac System</h2>
+    <h2>[NextVac : Smart Vaccine Program By SVS]</h2>
     <div id="loading" style="text-align:center; font-weight:bold; color:#0369a1;">⏳ กำลังเชื่อมต่อฐานข้อมูล...</div>
 
     <form id="mainForm" style="display:none;" onsubmit="generateA4(event)">
@@ -90,7 +94,7 @@
         </select>
 
         <div style="background:#f8fafc; padding:15px; border-radius:8px; margin-top:20px; border:1px solid #e2e8f0;">
-            <label style="margin-top:0;">วันที่รับเข้า (อ้างอิงวันรับเข้าล่าสุด)</label>
+            <label style="margin-top:0;">วันที่รับเข้าล่าสุด (อ้างอิงชุดสุดท้าย)</label>
             <input type="date" id="admissionDate" required>
 
             <label>จำนวนสุกรทั้งหมด (ตัว)</label>
@@ -123,8 +127,7 @@
                 <td><strong>จำนวน(ตัว)ทั้งหมด:</strong> <span id="lblQty"></span> ตัว</td>
             </tr>
             <tr>
-                <td><strong>วันที่รับเข้าล่าสุด:</strong> <span id="lblDate"></span></td>
-                <td><strong>อายุแรกรับ:</strong> <span id="lblAge"></span> สัปดาห์</td>
+                <td colspan="2"><strong>วันที่รับเข้าล่าสุด:</strong> <span id="lblDate"></span> &nbsp;&nbsp;&nbsp; <strong>อายุแรกรับ:</strong> <span id="lblAge"></span> สัปดาห์</td>
             </tr>
         </table>
 
@@ -140,7 +143,7 @@
                 </tr>
             </thead>
             <tbody id="vaccineTableBody">
-                </tbody>
+            </tbody>
         </table>
 
         <div class="signature-section">
@@ -167,11 +170,12 @@
 
 <script>
     // ==========================================
-    // ⚠️ นำ URL เว็บแอปจาก สเตป 4 มาวางที่นี่ครับ
-    // ==========================================
+    // ⚠️ นำ URL เว็บแอปจาก Google Apps Script มาวางที่นี่ครับ
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw-pvzJEp38w_bFhal93iDQI2MLhdEZZeZ38geKDtVRDEOUQfJBQRdSE6KBHETPfoZx/exec';
+    // ==========================================
     
     let masterData = { regions: {}, programs: [] };
+    const defaultTitle = "[NextVac : Smart Vaccine Program By SVS]";
 
     window.onload = async () => {
         try {
@@ -225,13 +229,20 @@
         });
     }
 
-    // ฟังก์ชันแปลงวันที่เป็นรูปแบบ ไทย DD/MM/YYYY
+    // ฟังก์ชันแปลงวันที่รูปแบบย่อ (DD/MM/YYYY)
     function formatDateThai(dateStr) {
         const d = new Date(dateStr);
         return d.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
     }
 
-    // ฟังก์ชันหลักในการสร้างกระดาษ A4
+    // แก้ไขข้อ 5: ฟังก์ชันแปลงวันที่รูปแบบเต็ม (วันพุธ ที่ 1 เมษายน พ.ศ.2569)
+    function getFullThaiDate(dateStr) {
+        const d = new Date(dateStr);
+        const days = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+        const months = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+        return `วัน${days[d.getDay()]} ที่ ${d.getDate()} ${months[d.getMonth()]} พ.ศ.${d.getFullYear() + 543}`;
+    }
+
     function generateA4(e) {
         e.preventDefault();
         
@@ -239,6 +250,7 @@
         const region = document.getElementById('regionSelect').value;
         const typeSelect = document.getElementById('swineType');
         const typeText = typeSelect.options[typeSelect.selectedIndex].text;
+        const safeType = typeText.split(' : ')[0]; // เช่น "หย่านม-ขุน"
         
         const progSelect = document.getElementById('programSelect');
         const progId = progSelect.value;
@@ -248,31 +260,29 @@
         const qty = document.getElementById('totalQty').value;
         const initialAge = parseFloat(document.getElementById('pigAge').value);
 
-        // นำข้อมูลไปแปะใน A4
+        // แปะข้อมูลลงกระดาษ
         document.getElementById('lblProgName').innerText = progName;
         document.getElementById('lblFarm').innerText = farm;
         document.getElementById('lblRegion').innerText = region;
-        document.getElementById('lblType').innerText = typeText.split(' : ')[0]; // เอาเฉพาะภาษาไทย
+        document.getElementById('lblType').innerText = safeType;
         document.getElementById('lblQty').innerText = qty;
-        document.getElementById('lblDate').innerText = formatDateThai(admDate);
+        
+        // ใช้รูปแบบวันที่เต็ม
+        document.getElementById('lblDate').innerText = getFullThaiDate(admDate);
         document.getElementById('lblAge').innerText = initialAge;
 
         // วาดตารางวัคซีน
         const tbody = document.getElementById('vaccineTableBody');
         tbody.innerHTML = '';
         
-        // ดึงรายการวัคซีนทั้งหมดที่ตรงกับ ID
         const progRows = masterData.programs.filter(p => p.id === progId);
-        progRows.sort((a, b) => a.offset - b.offset); // เรียงตามวัน offset
+        progRows.sort((a, b) => a.offset - b.offset);
 
         const baseDateObj = new Date(admDate);
 
         progRows.forEach(row => {
-            // คำนวณวันที่
             const targetDateObj = new Date(baseDateObj);
             targetDateObj.setDate(targetDateObj.getDate() + parseInt(row.offset));
-            
-            // คำนวณอายุ (สัปดาห์) โดยปัดเศษทศนิยม 1 ตำแหน่ง
             const calculatedAge = initialAge + (parseInt(row.offset) / 7);
 
             const tr = document.createElement('tr');
@@ -281,22 +291,28 @@
                 <td>${calculatedAge.toFixed(1)}</td>
                 <td>${row.vacType || '-'}</td>
                 <td>${row.tradeName || '-'}</td>
-                <td class="text-left">${row.note || ''}</td>
-                <td></td> `;
+                <td class="note-col">${row.note || ''}</td> <td></td>
+            `;
             tbody.appendChild(tr);
         });
 
-        // สร้างข้อมูล Traceability
         const today = new Date();
         document.getElementById('lblPrintDate').innerText = formatDateThai(today) + " " + today.toLocaleTimeString('th-TH');
         document.getElementById('lblRefId').innerText = `REF-${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-        // สลับหน้าจอ
+        // แก้ไขข้อ 3: ตั้งชื่อไฟล์ PDF อัตโนมัติ (ดัดแปลง Document Title ชั่วคราว)
+        const fileAdmDate = formatDateThai(admDate).replace(/\//g, '-');
+        const fileTodayDate = formatDateThai(today).replace(/\//g, '-');
+        const dynamicFileName = `${farm}_${safeType}_${progName}_${fileAdmDate}_${fileTodayDate}`;
+        document.title = dynamicFileName;
+
         document.getElementById('formSection').style.display = 'none';
         document.getElementById('a4Section').style.display = 'flex';
     }
 
     function backToForm() {
+        // คืนค่า Title เดิมเมื่อกลับหน้าแรก
+        document.title = defaultTitle;
         document.getElementById('a4Section').style.display = 'none';
         document.getElementById('formSection').style.display = 'block';
     }
