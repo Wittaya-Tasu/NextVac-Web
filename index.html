@@ -3,19 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>.[NextVac: Smart Vaccine Program By SVS]</title>
+    <title>[NextVac: Smart Vaccine Program By SVS]</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
     
     <style>
+        /* =======================================================
+           📌 โซน 1: ตั้งค่าตัวอักษร (ปรับแก้ตัวเลข pt ได้เอง) 
+           ======================================================= */
         :root {
-            --font-size-main: 13pt;      
-            --font-size-header: 16pt;    
-            --font-size-note: 12pt;      
-            --font-size-trace: 10pt;     
+            --font-size-main: 13pt;      /* ขนาดตัวอักษรหลักทั้งหมดในแบบฟอร์ม */
+            --font-size-header: 16pt;    /* ขนาดตัวอักษรหัวข้อ "โปรแกรมวัคซีน: ..." */
+            --font-size-note: 12pt;      /* ขนาดตัวอักษรในช่อง "หมายเหตุ" */
+            --font-size-trace: 10pt;     /* ขนาดตัวอักษรพิมพ์เมื่อ/รหัสเอกสาร */
+            
+        /* =======================================================
+           📌 โซน 2: ตั้งค่าระยะห่างลายเซ็น (ปรับขยับขึ้นลงได้เอง) 
+           ======================================================= */
             --sig-margin-top: 50px; 
             --sig-space-height: 50px; 
             --sig-margin-bottom: 30px; 
         }
+        /* ======================================================= */
 
         body { font-family: 'Sarabun', sans-serif; background-color: #f1f5f9; padding: 20px; color: #1e293b; margin: 0; }
         .container { max-width: 600px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
@@ -25,6 +33,7 @@
         button.btn-primary { width: 100%; padding: 15px; background: #0284c7; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 18px; margin-top: 25px; cursor: pointer; font-family: 'Sarabun', sans-serif;}
         button.btn-print { padding: 10px 20px; background: #16a34a; color: white; border: none; border-radius: 8px; cursor: pointer; font-family: 'Sarabun', sans-serif; font-size: 16px; font-weight: bold;}
         
+        /* สไตล์หน้ากระดาษ A4 */
         .a4-wrapper { display: none; flex-direction: column; align-items: center; }
         .a4-page { width: 210mm; height: 297mm; background: white; margin: 0 auto; padding: 10mm 15mm; box-sizing: border-box; font-size: var(--font-size-main); position: relative; overflow: hidden; color: black; display: flex; flex-direction: column; }
         .a4-header-text { text-align: center; font-size: var(--font-size-header); font-weight: bold; margin-bottom: 15px; flex-shrink: 0; }
@@ -53,7 +62,7 @@
     <h2>[NextVac : Smart Vaccine Program By SVS]</h2>
     <div id="loading" style="text-align:center; font-weight:bold; color:#0369a1;">⏳ เชื่อมต่อระบบ...</div>
 
-    <form id="mainForm" style="display:none;" onsubmit="(event)">
+    <form id="mainForm" style="display:none;" onsubmit="generateA4(event)">
         <label>เลือกภาค</label>
         <select id="regionSelect" onchange="updateFarms()" required><option value="">-- เลือกภาค --</option></select>
 
@@ -185,11 +194,20 @@
         const type = document.getElementById('swineType').value;
         const currentFarm = document.getElementById('farmSelect').value; 
         const progSelect = document.getElementById('programSelect');
+        
         progSelect.innerHTML = '<option value="">-- เลือกโปรแกรม --</option>';
-        const filtered = masterData.programs.filter(p => p.type === type && (p.owner === 'Global' || p.owner === currentFarm));
+        
+        // ⚡️ กรอง 2 ชั้น: สุกรประเภทเดียวกัน + (Global หรือ ฟาร์มตัวเองเท่านั้น)
+        const filtered = masterData.programs.filter(p => 
+            p.type === type && (p.owner === 'Global' || p.owner === currentFarm)
+        );
+        
         const seenIds = new Set();
         filtered.forEach(p => {
-            if (!seenIds.has(p.id)) { seenIds.add(p.id); progSelect.add(new Option(p.name, p.id)); }
+            if (!seenIds.has(p.id)) { 
+                seenIds.add(p.id); 
+                progSelect.add(new Option(p.name, p.id)); 
+            }
         });
     }
 
@@ -288,7 +306,7 @@
                 targetDate: standardDateForDB,
                 vaccineName: vacNameFull
             });
-            
+
             // เก็บข้อมูลวัคซีนแต่ละเข็ม ไว้สร้างการ์ด LINE
             currentSchedulePayload.scheduleData.push({ date: dateDisplay, age: calculatedAge, vac: vacNameFull });
 
