@@ -297,12 +297,29 @@
         // วาดตารางวัคซีน
         const progRows = masterData.programs.filter(p => p.id === progId).sort((a, b) => a.offset - b.offset);
 
+        // เตรียมอาร์เรย์สำหรับเก็บข้อมูลส่งไปหลังบ้าน
+        let tasksToSave = [];
+
         progRows.forEach(row => {
             const targetDateObj = new Date(baseDateObj);
             targetDateObj.setDate(targetDateObj.getDate() + parseInt(row.offset));
             const dateDisplay = formatDateThai(targetDateObj);
             const calculatedAge = Math.floor(initialAge + (parseInt(row.offset) / 7));
+            
+            // สร้างข้อมูลสำหรับส่งไปเก็บใน Database
+            const standardDateForDB = targetDateObj.toISOString().split('T')[0]; // Format: YYYY-MM-DD สำหรับระบบ
+            const uniqueTaskId = `TK-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 100)}`;
+            const vacNameFull = row.tradeName ? `${row.vacType} (${row.tradeName})` : row.vacType;
 
+            tasksToSave.push({
+                taskId: uniqueTaskId,
+                farmName: farm,
+                swineType: typeText,
+                targetDate: standardDateForDB,
+                vaccineName: vacNameFull
+            });
+
+            // วาดตารางลงบน A4
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${dateDisplay === lastDate ? "" : dateDisplay}</td>
@@ -315,6 +332,15 @@
             tbody.appendChild(tr);
             lastDate = dateDisplay;
         });
+
+        // ----------------------------------------------------
+        // คำสั่งส่งข้อมูลไปเก็บบน Google Sheets (ทำงานแบบเงียบๆ)
+        // ----------------------------------------------------
+        fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: "saveTasks", tasks: tasksToSave })
+        }).then(res => console.log("บันทึกคิวงานสำเร็จ")).catch(err => console.error("Error saving tasks"));
+        // ----------------------------------------------------
 
         const today = new Date();
         document.getElementById('lblPrintDate').innerText = formatDateThai(today) + " " + today.toLocaleTimeString('th-TH');
