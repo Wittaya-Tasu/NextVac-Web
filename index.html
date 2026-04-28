@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>[NextVac.: Smart Vaccine Program By SVS]</title>
+    <title>[NextVac: Smart Vaccine Program By SVS]</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
     <style>
         /* =======================================================
            📌 โซน 1: ตั้งค่าตัวอักษร (ปรับแก้ตัวเลข pt ได้เอง) 
@@ -18,14 +21,8 @@
         /* =======================================================
            📌 โซน 2: ตั้งค่าระยะห่างลายเซ็น (ปรับขยับขึ้นลงได้เอง) 
            ======================================================= */
-           
-            /* ตัวแปรนี้ใช้ดันโซนลายเซ็นให้ห่างจากตารางด้านบน (ใส่ px เช่น 30px, 50px หรือใส่ auto เพื่อให้ดันลงไปล่างสุดเสมอ) */
             --sig-margin-top: 50px; 
-            
-            /* ตัวแปรนี้กำหนด "ความสูงของพื้นที่ให้เซ็นชื่อ" (ยิ่งเลขมาก พื้นที่เซ็นยิ่งกว้าง และข้อความจะถูกดันต่ำลง) */
             --sig-space-height: 50px; 
-            
-            /* ตัวแปรนี้กำหนดระยะห่างของลายเซ็นจากขอบล่างของกระดาษ (Traceability) */
             --sig-margin-bottom: 30px; 
         }
         /* ======================================================= */
@@ -45,8 +42,7 @@
             padding: 10mm 15mm; box-sizing: border-box; 
             font-size: var(--font-size-main);
             position: relative; overflow: hidden; color: black;
-            display: flex; 
-            flex-direction: column; 
+            display: flex; flex-direction: column; 
         }
         
         /* สไตล์ส่วนหัว */
@@ -60,20 +56,11 @@
         
         /* สไตล์ส่วนลายเซ็นถูกควบคุมโดยตัวแปรด้านบน */
         .signature-section { 
-            display: flex; 
-            justify-content: space-between; 
-            margin-top: var(--sig-margin-top); 
-            margin-bottom: var(--sig-margin-bottom); 
-            font-size: var(--font-size-main); 
-            flex-shrink: 0;
+            display: flex; justify-content: space-between; 
+            margin-top: var(--sig-margin-top); margin-bottom: var(--sig-margin-bottom); 
+            font-size: var(--font-size-main); flex-shrink: 0;
         }
-        .signature-box { 
-            text-align: center; 
-            width: 45%; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-        }
+        .signature-box { text-align: center; width: 45%; display: flex; flex-direction: column; align-items: center; }
         .sig-space { height: var(--sig-space-height); } /* ความสูงพื้นที่เซ็น */
         .sig-line { border-top: 1px dashed black; width: 80%; margin: 0 auto 5px auto; } 
         .sig-line-hidden { border-top: 1px solid transparent; width: 80%; margin: 0 auto 5px auto; } 
@@ -135,10 +122,11 @@
 <div class="a4-wrapper" id="a4Section">
     <div class="no-print" style="margin-bottom:20px; width:210mm; display:flex; justify-content:space-between; align-items:center;">
         <button style="padding:10px; cursor:pointer;" onclick="location.reload()">⬅️ เริ่มใหม่</button>
+        <button id="btnSendLine" onclick="sendImageToLine()" style="padding:10px 20px; background:#0284c7; color:white; border:none; border-radius:8px; cursor:pointer; font-family:'Sarabun'; font-size:16px; font-weight:bold;">📲 ส่งรูปโปรแกรมเข้ากลุ่ม LINE</button>
         <button class="btn-print" onclick="window.print()">🖨️ พิมพ์ / บันทึกเป็น PDF</button>
     </div>
 
-    <div class="a4-page">
+    <div class="a4-page" id="a4Paper">
         <div class="a4-header-text">โปรแกรมวัคซีน : <span id="lblProgName"></span></div>
         <table class="info-table">
             <tr><td width="50%"><strong>ชื่อฟาร์ม:</strong> <span id="lblFarm"></span></td><td width="50%"><strong>ภาค:</strong> <span id="lblRegion"></span></td></tr>
@@ -189,7 +177,7 @@
 <script>
     // ==========================================
     // ⚠️ นำ URL เว็บแอปจาก Google Apps Script มาวางที่นี่ครับ
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw-pvzJEp38w_bFhal93iDQI2MLhdEZZeZ38geKDtVRDEOUQfJBQRdSE6KBHETPfoZx/exec';
+    const SCRIPT_URL = 'เอา_URL_เว็บแอป_ของคุณมาวางแทนที่ข้อความนี้ครับ';
     // ==========================================
     
     let masterData = { regions: {}, programs: [] };
@@ -221,18 +209,17 @@
                 farmSelect.add(opt);
             });
         }
-        // สั่งให้ล้าง/รีเฟรชโปรแกรมวัคซีนด้วยเวลาที่มีการเปลี่ยนฟาร์ม
         updatePrograms(); 
     }
 
     function updatePrograms() {
         const type = document.getElementById('swineType').value;
-        const currentFarm = document.getElementById('farmSelect').value; // ดึงชื่อฟาร์มที่กำลังเลือกอยู่
+        const currentFarm = document.getElementById('farmSelect').value; 
         const progSelect = document.getElementById('programSelect');
         
         progSelect.innerHTML = '<option value="">-- เลือกโปรแกรม --</option>';
         
-        // ⚡️ ไฮไลท์สำคัญ: กรอง 2 ชั้น (ประเภทสุกรต้องตรงกัน และ สิทธิ์ต้องเป็น Global หรือเป็นชื่อฟาร์มตัวเองเท่านั้น)
+        // ⚡️ กรอง 2 ชั้น: สุกรประเภทเดียวกัน + (Global หรือ ฟาร์มตัวเองเท่านั้น)
         const filtered = masterData.programs.filter(p => 
             p.type === type && (p.owner === 'Global' || p.owner === currentFarm)
         );
@@ -286,14 +273,11 @@
         
         const baseDateObj = new Date(admDate);
         
-        // ----------------------------------------------------
-        // แทรกแถวแรก: แถว "รับเข้า"
-        // ----------------------------------------------------
+        // แทรกแถวแรก: รับเข้า
         const firstRowDateDisplay = formatDateThai(baseDateObj);
-        let lastDate = firstRowDateDisplay; // เก็บไว้เช็คว่าวัคซีนเข็มถัดไปทำวันเดียวกับวันรับเข้าหรือไม่
+        let lastDate = firstRowDateDisplay; 
 
         const trInitial = document.createElement('tr');
-        // ทำให้พื้นหลังสีต่างนิดหน่อย เพื่อให้สังเกตง่ายว่าเป็นวันรับเข้า
         trInitial.style.backgroundColor = "#f8fafc"; 
         trInitial.innerHTML = `
             <td>${firstRowDateDisplay}</td>
@@ -304,12 +288,9 @@
             <td></td>
         `;
         tbody.appendChild(trInitial);
-        // ----------------------------------------------------
 
         // วาดตารางวัคซีน
         const progRows = masterData.programs.filter(p => p.id === progId).sort((a, b) => a.offset - b.offset);
-
-        // เตรียมอาร์เรย์สำหรับเก็บข้อมูลส่งไปหลังบ้าน
         let tasksToSave = [];
 
         progRows.forEach(row => {
@@ -318,8 +299,7 @@
             const dateDisplay = formatDateThai(targetDateObj);
             const calculatedAge = Math.floor(initialAge + (parseInt(row.offset) / 7));
             
-            // สร้างข้อมูลสำหรับส่งไปเก็บใน Database
-            const standardDateForDB = targetDateObj.toISOString().split('T')[0]; // Format: YYYY-MM-DD สำหรับระบบ
+            const standardDateForDB = targetDateObj.toISOString().split('T')[0];
             const uniqueTaskId = `TK-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 100)}`;
             const vacNameFull = row.tradeName ? `${row.vacType} (${row.tradeName})` : row.vacType;
 
@@ -331,7 +311,6 @@
                 vaccineName: vacNameFull
             });
 
-            // วาดตารางลงบน A4
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${dateDisplay === lastDate ? "" : dateDisplay}</td>
@@ -345,14 +324,11 @@
             lastDate = dateDisplay;
         });
 
-        // ----------------------------------------------------
-        // คำสั่งส่งข้อมูลไปเก็บบน Google Sheets (ทำงานแบบเงียบๆ)
-        // ----------------------------------------------------
+        // ส่งข้อมูลบันทึกคิวงานหลังบ้าน
         fetch(SCRIPT_URL, {
             method: 'POST',
             body: JSON.stringify({ action: "saveTasks", tasks: tasksToSave })
         }).then(res => console.log("บันทึกคิวงานสำเร็จ")).catch(err => console.error("Error saving tasks"));
-        // ----------------------------------------------------
 
         const today = new Date();
         document.getElementById('lblPrintDate').innerText = formatDateThai(today) + " " + today.toLocaleTimeString('th-TH');
@@ -360,6 +336,46 @@
         document.title = `${farm}_${typeText}_${progName}_${formatDateThai(admDate).replace(/\//g,'-')}`;
         document.getElementById('formSection').style.display = 'none';
         document.getElementById('a4Section').style.display = 'flex';
+    }
+
+    // ⚡️ ฟังก์ชันใหม่: แคปหน้าจอเป็นภาพและส่งไปที่ Apps Script
+    function sendImageToLine() {
+        const btn = document.getElementById('btnSendLine');
+        btn.innerText = "⏳ กำลังสร้างรูปและส่งเข้า LINE...";
+        btn.disabled = true;
+        btn.style.opacity = "0.7";
+
+        // ค้นหาหน้ากระดาษที่ต้องการถ่าย (div id="a4Paper")
+        const element = document.getElementById('a4Paper');
+        html2canvas(element, { scale: 2 }).then(canvas => {
+            const base64Data = canvas.toDataURL("image/png").split(',')[1];
+            const farm = document.getElementById('lblFarm').innerText;
+
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: "sendImage", farmName: farm, imageB64: base64Data })
+            }).then(res => res.json())
+            .then(data => {
+                if(data.status === "success"){
+                    btn.innerText = "✅ ส่งรูปเข้า LINE สำเร็จ!";
+                    btn.style.background = "#16a34a";
+                } else {
+                    btn.innerText = "❌ ส่งไม่สำเร็จ (โปรดเช็ค Line ID)";
+                    btn.style.background = "#dc2626";
+                }
+                // คืนค่าปุ่มกลับมาเป็นเหมือนเดิมหลังจาก 4 วินาที
+                setTimeout(() => {
+                    btn.innerText = "📲 ส่งรูปโปรแกรมเข้ากลุ่ม LINE";
+                    btn.style.background = "#0284c7";
+                    btn.disabled = false;
+                    btn.style.opacity = "1";
+                }, 4000);
+            }).catch(err => {
+                btn.innerText = "❌ เกิดข้อผิดพลาดในการเชื่อมต่อ";
+                btn.disabled = false;
+                btn.style.opacity = "1";
+            });
+        });
     }
 </script>
 </body>
