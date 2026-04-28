@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>.[NextVac: Smart Vaccine Program By SVS]</title>
+    <title>[NextVac: Smart Vaccine Program By SVS]</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -338,17 +338,18 @@
         document.getElementById('a4Section').style.display = 'flex';
     }
 
-    // ⚡️ ฟังก์ชันใหม่: แคปหน้าจอเป็นภาพและส่งไปที่ Apps Script
+    // ⚡️ ฟังก์ชันใหม่: แคปหน้าจอเป็นภาพและส่งไปที่ Apps Script (แก้ปัญหาขนาดรูปและแจ้งเตือน)
     function sendImageToLine() {
         const btn = document.getElementById('btnSendLine');
-        btn.innerText = "⏳ กำลังสร้างรูปและส่งเข้า LINE...";
+        btn.innerText = "⏳ กำลังประมวลผลรูปภาพ...";
         btn.disabled = true;
         btn.style.opacity = "0.7";
 
-        // ค้นหาหน้ากระดาษที่ต้องการถ่าย (div id="a4Paper")
         const element = document.getElementById('a4Paper');
-        html2canvas(element, { scale: 2 }).then(canvas => {
-            const base64Data = canvas.toDataURL("image/png").split(',')[1];
+        // ปรับลดสเกลลงนิดหน่อย เพื่อควบคุมขนาดไฟล์
+        html2canvas(element, { scale: 1.5 }).then(canvas => {
+            // เข้ารหัสภาพเป็น JPEG แทน PNG จะทำให้ขนาดไฟล์เล็กลงหลายเท่า ส่งผ่าน LINE สบายๆ
+            const base64Data = canvas.toDataURL("image/jpeg", 0.7).split(',')[1];
             const farm = document.getElementById('lblFarm').innerText;
 
             fetch(SCRIPT_URL, {
@@ -357,21 +358,23 @@
             }).then(res => res.json())
             .then(data => {
                 if(data.status === "success"){
-                    btn.innerText = "✅ ส่งรูปเข้า LINE สำเร็จ!";
+                    btn.innerText = "✅ ส่งรูปลงกลุ่มสำเร็จ!";
                     btn.style.background = "#16a34a";
                 } else {
-                    btn.innerText = "❌ ส่งไม่สำเร็จ (โปรดเช็ค Line ID)";
+                    // โชว์สาเหตุที่แท้จริงจากระบบหลังบ้านบนปุ่มเลย
+                    btn.innerText = "❌ " + (data.message || "เกิดข้อผิดพลาด");
                     btn.style.background = "#dc2626";
                 }
-                // คืนค่าปุ่มกลับมาเป็นเหมือนเดิมหลังจาก 4 วินาที
+                
                 setTimeout(() => {
                     btn.innerText = "📲 ส่งรูปโปรแกรมเข้ากลุ่ม LINE";
                     btn.style.background = "#0284c7";
                     btn.disabled = false;
                     btn.style.opacity = "1";
-                }, 4000);
+                }, 6000);
             }).catch(err => {
-                btn.innerText = "❌ เกิดข้อผิดพลาดในการเชื่อมต่อ";
+                btn.innerText = "❌ เชื่อมต่อเซิร์ฟเวอร์ไม่ได้";
+                btn.style.background = "#dc2626";
                 btn.disabled = false;
                 btn.style.opacity = "1";
             });
