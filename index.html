@@ -3,17 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>.[NextVac : Smart Vaccine Program By SVS]</title>
+    <title>[NextVac : Smart Vaccine Program By SVS]</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         /* =======================================================
-           📌 โซนตั้งค่าตัวอักษร (สามารถปรับแก้ตัวเลข pt ได้เองตามต้องการ) 
+           📌 โซน 1: ตั้งค่าตัวอักษร (ปรับแก้ตัวเลข pt ได้เอง) 
            ======================================================= */
         :root {
             --font-size-main: 14pt;      /* ขนาดตัวอักษรหลักทั้งหมดในแบบฟอร์ม */
-            --font-size-header: 16pt;    /* ขนาดตัวอักษรหัวข้อ "โปรแกรมวัคซีน: ..." */
+            --font-size-header: 14pt;    /* ขนาดตัวอักษรหัวข้อ "โปรแกรมวัคซีน: ..." */
             --font-size-note: 12pt;      /* ขนาดตัวอักษรในช่อง "หมายเหตุ" */
             --font-size-trace: 10pt;     /* ขนาดตัวอักษรพิมพ์เมื่อ/รหัสเอกสาร */
+            
+        /* =======================================================
+           📌 โซน 2: ตั้งค่าระยะห่างลายเซ็น (ปรับขยับขึ้นลงได้เอง) 
+           ======================================================= */
+           
+            /* ตัวแปรนี้ใช้ดันโซนลายเซ็นให้ห่างจากตารางด้านบน (ใส่ px เช่น 30px, 50px หรือใส่ auto เพื่อให้ดันลงไปล่างสุดเสมอ) */
+            --sig-margin-top: auto; 
+            
+            /* ตัวแปรนี้กำหนด "ความสูงของพื้นที่ให้เซ็นชื่อ" (ยิ่งเลขมาก พื้นที่เซ็นยิ่งกว้าง และข้อความจะถูกดันต่ำลง) */
+            --sig-space-height: 50px; 
+            
+            /* ตัวแปรนี้กำหนดระยะห่างของลายเซ็นจากขอบล่างของกระดาษ (Traceability) */
+            --sig-margin-bottom: 30px; 
         }
         /* ======================================================= */
 
@@ -33,7 +46,7 @@
             font-size: var(--font-size-main);
             position: relative; overflow: hidden; color: black;
             display: flex; 
-            flex-direction: column; /* เปลี่ยนโครงสร้างให้จัดเรียงจากบนลงล่าง เพื่อดันลายเซ็นลงไป */
+            flex-direction: column; 
         }
         
         /* สไตล์ส่วนหัว */
@@ -45,12 +58,12 @@
         .vaccine-table th, .vaccine-table td { border: 1px solid black; padding: 6px; text-align: center; }
         .vaccine-table .note-col { text-align: left; padding-left: 10px; font-size: var(--font-size-note); }
         
-        /* สไตล์ส่วนลายเซ็น (ปรับให้เหมือนกันและดันลงล่าง) */
+        /* สไตล์ส่วนลายเซ็นถูกควบคุมโดยตัวแปรด้านบน */
         .signature-section { 
             display: flex; 
             justify-content: space-between; 
-            margin-top: auto; /* ดันลงล่างสุดของพื้นที่ที่เหลือ */
-            margin-bottom: 25px; /* เว้นระยะจากรหัส Traceability ด้านล่าง */
+            margin-top: var(--sig-margin-top); 
+            margin-bottom: var(--sig-margin-bottom); 
             font-size: var(--font-size-main); 
             flex-shrink: 0;
         }
@@ -61,8 +74,9 @@
             flex-direction: column; 
             align-items: center; 
         }
-        .sig-space { height: 50px; } 
-        .sig-line { border-top: 1px dashed black; width: 80%; margin: 0 auto 5px auto; } /* ใช้เส้นประเหมือนกันทั้งสองฝั่ง */
+        .sig-space { height: var(--sig-space-height); } /* ความสูงพื้นที่เซ็น */
+        .sig-line { border-top: 1px dashed black; width: 80%; margin: 0 auto 5px auto; } 
+        .sig-line-hidden { border-top: 1px solid transparent; width: 80%; margin: 0 auto 5px auto; } 
 
         /* สไตล์ Traceability */
         .traceability { 
@@ -71,7 +85,6 @@
             display: flex; justify-content: center; gap: 20px;
         }
 
-        /* สำหรับตอนสั่ง Print */
         @media print {
             @page { size: A4; margin: 0; }
             body { background: white; margin: 0; padding: 0; }
@@ -108,14 +121,14 @@
         <select id="programSelect" required><option value="">-- เลือกประเภทสุกรก่อน --</option></select>
 
         <div style="background:#f8fafc; padding:15px; border-radius:8px; margin-top:20px; border:1px solid #e2e8f0;">
-            <label style="margin-top:0;">วันที่รับเข้าล่าสุด</label>
+            <label style="margin-top:0;">วันที่รับเข้า</label>
             <input type="date" id="admissionDate" required>
-            <label>จำนวนสุกรทั้งหมด (ตัว)</label>
+            <label>สุกรทั้งหมด (ตัว)</label>
             <input type="number" id="totalQty" required>
-            <label>อายุสุกรรับเข้า (สัปดาห์)</label>
+            <label>อายุรับเข้า (สัปดาห์)</label>
             <input type="number" id="pigAge" required step="1">
         </div>
-        <button type="submit" class="btn-primary">สร้างการ์ดโปรแกรมวัคซีน</button>
+        <button type="submit" class="btn-primary">สร้างโปรแกรมวัคซีน</button>
     </form>
 </div>
 
@@ -131,17 +144,17 @@
             <tr><td width="50%"><strong>ชื่อฟาร์ม:</strong> <span id="lblFarm"></span></td><td width="50%"><strong>ภาค:</strong> <span id="lblRegion"></span></td></tr>
             <tr><td><strong>ประเภทสุกร:</strong> <span id="lblType"></span></td><td><strong>จำนวน(ตัว)ทั้งหมด:</strong> <span id="lblQty"></span> ตัว</td></tr>
             <tr>
-                <td colspan="2"><strong>วันที่รับเข้าล่าสุด:</strong> <span id="lblDate"></span> &nbsp;&nbsp;&nbsp; <strong>อายุรับเข้า:</strong> <span id="lblAge"></span> สัปดาห์</td>
+                <td colspan="2"><strong>วันที่รับเข้า:</strong> <span id="lblDate"></span> &nbsp;&nbsp;&nbsp; <strong>อายุรับเข้า:</strong> <span id="lblAge"></span> สัปดาห์</td>
             </tr>
         </table>
 
         <table class="vaccine-table">
             <thead>
                 <tr>
-                    <th width="16%">วันที่ทำวัคซีน</th>
-                    <th width="10%">อายุ<br>(สัปดาห์)</th>
+                    <th width="16%">กำหนดวัคซีน</th>
+                    <th width="10%">อายุ(สัปดาห์)</th>
                     <th width="16%">วัคซีน</th>
-                    <th width="18%">ยี่ห้อวัคซีน</th>
+                    <th width="18%">ชื่อการค้า</th>
                     <th width="24%">หมายเหตุ</th>
                     <th width="16%">วันที่ทำจริง</th>
                 </tr>
@@ -152,7 +165,8 @@
         <div class="signature-section">
             <div class="signature-box">
                 <div class="sig-space"></div>
-                <div class="sig-line"></div> <div>( <span id="lblVetName"></span> )</div>
+                <div class="sig-line-hidden"></div> 
+                <div>( <span id="lblVetName"></span> )</div>
                 <div>สัตวแพทย์ผู้ควบคุมฟาร์ม</div>
                 <div style="margin-top:5px;">วันที่ _______/_______/_______</div>
             </div>
@@ -257,9 +271,31 @@
 
         const tbody = document.getElementById('vaccineTableBody');
         tbody.innerHTML = '';
-        const progRows = masterData.programs.filter(p => p.id === progId).sort((a, b) => a.offset - b.offset);
+        
         const baseDateObj = new Date(admDate);
-        let lastDate = "";
+        
+        // ----------------------------------------------------
+        // แทรกแถวแรก: แถว "รับเข้า"
+        // ----------------------------------------------------
+        const firstRowDateDisplay = formatDateThai(baseDateObj);
+        let lastDate = firstRowDateDisplay; // เก็บไว้เช็คว่าวัคซีนเข็มถัดไปทำวันเดียวกับวันรับเข้าหรือไม่
+
+        const trInitial = document.createElement('tr');
+        // ทำให้พื้นหลังสีต่างนิดหน่อย เพื่อให้สังเกตง่ายว่าเป็นวันรับเข้า
+        trInitial.style.backgroundColor = "#f8fafc"; 
+        trInitial.innerHTML = `
+            <td>${firstRowDateDisplay}</td>
+            <td>${initialAge}</td>
+            <td>-</td>
+            <td>-</td>
+            <td class="note-col"><strong>รับเข้าสุกร</strong></td>
+            <td></td>
+        `;
+        tbody.appendChild(trInitial);
+        // ----------------------------------------------------
+
+        // วาดตารางวัคซีน
+        const progRows = masterData.programs.filter(p => p.id === progId).sort((a, b) => a.offset - b.offset);
 
         progRows.forEach(row => {
             const targetDateObj = new Date(baseDateObj);
