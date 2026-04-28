@@ -221,16 +221,28 @@
                 farmSelect.add(opt);
             });
         }
+        // สั่งให้ล้าง/รีเฟรชโปรแกรมวัคซีนด้วยเวลาที่มีการเปลี่ยนฟาร์ม
+        updatePrograms(); 
     }
 
     function updatePrograms() {
         const type = document.getElementById('swineType').value;
+        const currentFarm = document.getElementById('farmSelect').value; // ดึงชื่อฟาร์มที่กำลังเลือกอยู่
         const progSelect = document.getElementById('programSelect');
+        
         progSelect.innerHTML = '<option value="">-- เลือกโปรแกรม --</option>';
-        const filtered = masterData.programs.filter(p => p.type === type);
+        
+        // ⚡️ ไฮไลท์สำคัญ: กรอง 2 ชั้น (ประเภทสุกรต้องตรงกัน และ สิทธิ์ต้องเป็น Global หรือเป็นชื่อฟาร์มตัวเองเท่านั้น)
+        const filtered = masterData.programs.filter(p => 
+            p.type === type && (p.owner === 'Global' || p.owner === currentFarm)
+        );
+        
         const seenIds = new Set();
         filtered.forEach(p => {
-            if (!seenIds.has(p.id)) { seenIds.add(p.id); progSelect.add(new Option(p.name, p.id)); }
+            if (!seenIds.has(p.id)) { 
+                seenIds.add(p.id); 
+                progSelect.add(new Option(p.name, p.id)); 
+            }
         });
     }
 
