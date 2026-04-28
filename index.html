@@ -3,29 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>.[NextVac: Smart Vaccine Program By SVS]</title>
+    <title>[NextVac: Smart Vaccine Program By SVS]</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    
     <style>
-        /* =======================================================
-           📌 โซน 1: ตั้งค่าตัวอักษร (ปรับแก้ตัวเลข pt ได้เอง) 
-           ======================================================= */
         :root {
-            --font-size-main: 13pt;      /* ขนาดตัวอักษรหลักทั้งหมดในแบบฟอร์ม */
-            --font-size-header: 16pt;    /* ขนาดตัวอักษรหัวข้อ "โปรแกรมวัคซีน: ..." */
-            --font-size-note: 12pt;      /* ขนาดตัวอักษรในช่อง "หมายเหตุ" */
-            --font-size-trace: 10pt;     /* ขนาดตัวอักษรพิมพ์เมื่อ/รหัสเอกสาร */
-            
-        /* =======================================================
-           📌 โซน 2: ตั้งค่าระยะห่างลายเซ็น (ปรับขยับขึ้นลงได้เอง) 
-           ======================================================= */
+            --font-size-main: 13pt;      
+            --font-size-header: 16pt;    
+            --font-size-note: 12pt;      
+            --font-size-trace: 10pt;     
             --sig-margin-top: 50px; 
             --sig-space-height: 50px; 
             --sig-margin-bottom: 30px; 
         }
-        /* ======================================================= */
 
         body { font-family: 'Sarabun', sans-serif; background-color: #f1f5f9; padding: 20px; color: #1e293b; margin: 0; }
         .container { max-width: 600px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
@@ -35,42 +25,18 @@
         button.btn-primary { width: 100%; padding: 15px; background: #0284c7; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 18px; margin-top: 25px; cursor: pointer; font-family: 'Sarabun', sans-serif;}
         button.btn-print { padding: 10px 20px; background: #16a34a; color: white; border: none; border-radius: 8px; cursor: pointer; font-family: 'Sarabun', sans-serif; font-size: 16px; font-weight: bold;}
         
-        /* สไตล์หน้ากระดาษ A4 */
         .a4-wrapper { display: none; flex-direction: column; align-items: center; }
-        .a4-page {
-            width: 210mm; height: 297mm; background: white; margin: 0 auto;
-            padding: 10mm 15mm; box-sizing: border-box; 
-            font-size: var(--font-size-main);
-            position: relative; overflow: hidden; color: black;
-            display: flex; flex-direction: column; 
-        }
-        
-        /* สไตล์ส่วนหัว */
+        .a4-page { width: 210mm; height: 297mm; background: white; margin: 0 auto; padding: 10mm 15mm; box-sizing: border-box; font-size: var(--font-size-main); position: relative; overflow: hidden; color: black; display: flex; flex-direction: column; }
         .a4-header-text { text-align: center; font-size: var(--font-size-header); font-weight: bold; margin-bottom: 15px; flex-shrink: 0; }
         .info-table { width: 100%; margin-bottom: 15px; font-size: var(--font-size-main); flex-shrink: 0; }
-        
-        /* สไตล์ตารางวัคซีน */
         .vaccine-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: var(--font-size-main); flex-shrink: 0; }
         .vaccine-table th, .vaccine-table td { border: 1px solid black; padding: 6px; text-align: center; }
         .vaccine-table .note-col { text-align: left; padding-left: 10px; font-size: var(--font-size-note); }
-        
-        /* สไตล์ส่วนลายเซ็นถูกควบคุมโดยตัวแปรด้านบน */
-        .signature-section { 
-            display: flex; justify-content: space-between; 
-            margin-top: var(--sig-margin-top); margin-bottom: var(--sig-margin-bottom); 
-            font-size: var(--font-size-main); flex-shrink: 0;
-        }
+        .signature-section { display: flex; justify-content: space-between; margin-top: var(--sig-margin-top); margin-bottom: var(--sig-margin-bottom); font-size: var(--font-size-main); flex-shrink: 0; }
         .signature-box { text-align: center; width: 45%; display: flex; flex-direction: column; align-items: center; }
-        .sig-space { height: var(--sig-space-height); } /* ความสูงพื้นที่เซ็น */
+        .sig-space { height: var(--sig-space-height); } 
         .sig-line { border-top: 1px dashed black; width: 80%; margin: 0 auto 5px auto; } 
-        .sig-line-hidden { border-top: 1px solid transparent; width: 80%; margin: 0 auto 5px auto; } 
-
-        /* สไตล์ Traceability */
-        .traceability { 
-            position: absolute; bottom: 10mm; width: calc(100% - 30mm); left: 15mm;
-            font-size: var(--font-size-trace); color: #94a3b8; text-align: center; 
-            display: flex; justify-content: center; gap: 20px;
-        }
+        .traceability { position: absolute; bottom: 10mm; width: calc(100% - 30mm); left: 15mm; font-size: var(--font-size-trace); color: #94a3b8; text-align: center; display: flex; justify-content: center; gap: 20px; }
 
         @media print {
             @page { size: A4; margin: 0; }
@@ -122,7 +88,7 @@
 <div class="a4-wrapper" id="a4Section">
     <div class="no-print" style="margin-bottom:20px; width:210mm; display:flex; justify-content:space-between; align-items:center;">
         <button style="padding:10px; cursor:pointer;" onclick="location.reload()">⬅️ เริ่มใหม่</button>
-        <button id="btnSendLine" onclick="sendImageToLine()" style="padding:10px 20px; background:#0284c7; color:white; border:none; border-radius:8px; cursor:pointer; font-family:'Sarabun'; font-size:16px; font-weight:bold;">📲 ส่งรูปโปรแกรมเข้ากลุ่ม LINE</button>
+        <button id="btnSendLine" onclick="sendScheduleToLine()" style="padding:10px 20px; background:#0284c7; color:white; border:none; border-radius:8px; cursor:pointer; font-family:'Sarabun'; font-size:16px; font-weight:bold;">📲 ส่งการ์ดโปรแกรมเข้า LINE</button>
         <button class="btn-print" onclick="window.print()">🖨️ พิมพ์ / บันทึกเป็น PDF</button>
     </div>
 
@@ -181,6 +147,9 @@
     // ==========================================
     
     let masterData = { regions: {}, programs: [] };
+    
+    // ⚡️ ตัวแปรเก็บข้อมูลโปรแกรมวัคซีนสำหรับสร้างการ์ด
+    let currentSchedulePayload = null; 
 
     window.onload = async () => {
         try {
@@ -216,20 +185,11 @@
         const type = document.getElementById('swineType').value;
         const currentFarm = document.getElementById('farmSelect').value; 
         const progSelect = document.getElementById('programSelect');
-        
         progSelect.innerHTML = '<option value="">-- เลือกโปรแกรม --</option>';
-        
-        // ⚡️ กรอง 2 ชั้น: สุกรประเภทเดียวกัน + (Global หรือ ฟาร์มตัวเองเท่านั้น)
-        const filtered = masterData.programs.filter(p => 
-            p.type === type && (p.owner === 'Global' || p.owner === currentFarm)
-        );
-        
+        const filtered = masterData.programs.filter(p => p.type === type && (p.owner === 'Global' || p.owner === currentFarm));
         const seenIds = new Set();
         filtered.forEach(p => {
-            if (!seenIds.has(p.id)) { 
-                seenIds.add(p.id); 
-                progSelect.add(new Option(p.name, p.id)); 
-            }
+            if (!seenIds.has(p.id)) { seenIds.add(p.id); progSelect.add(new Option(p.name, p.id)); }
         });
     }
 
@@ -273,23 +233,25 @@
         
         const baseDateObj = new Date(admDate);
         
-        // แทรกแถวแรก: รับเข้า
+        // เซ็ตค่าตัวแปรเก็บข้อมูลส่ง LINE
+        currentSchedulePayload = {
+            farmName: farm,
+            summaryInfo: { type: typeText, qty: qty, admDate: formatDateThai(admDate) },
+            scheduleData: []
+        };
+
         const firstRowDateDisplay = formatDateThai(baseDateObj);
         let lastDate = firstRowDateDisplay; 
 
+        // แถวรับเข้า
         const trInitial = document.createElement('tr');
         trInitial.style.backgroundColor = "#f8fafc"; 
         trInitial.innerHTML = `
-            <td>${firstRowDateDisplay}</td>
-            <td>${initialAge}</td>
-            <td>-</td>
-            <td>-</td>
-            <td class="note-col"><strong>รับเข้าสุกร</strong></td>
-            <td></td>
+            <td>${firstRowDateDisplay}</td><td>${initialAge}</td><td>-</td><td>-</td>
+            <td class="note-col"><strong>รับเข้าสุกร</strong></td><td></td>
         `;
         tbody.appendChild(trInitial);
 
-        // วาดตารางวัคซีน
         const progRows = masterData.programs.filter(p => p.id === progId).sort((a, b) => a.offset - b.offset);
         let tasksToSave = [];
 
@@ -303,13 +265,10 @@
             const uniqueTaskId = `TK-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 100)}`;
             const vacNameFull = row.tradeName ? `${row.vacType} (${row.tradeName})` : row.vacType;
 
-            tasksToSave.push({
-                taskId: uniqueTaskId,
-                farmName: farm,
-                swineType: typeText,
-                targetDate: standardDateForDB,
-                vaccineName: vacNameFull
-            });
+            tasksToSave.push({ taskId: uniqueTaskId, farmName: farm, swineType: typeText, targetDate: standardDateForDB, vaccineName: vacNameFull });
+            
+            // เก็บข้อมูลวัคซีนแต่ละเข็ม ไว้สร้างการ์ด LINE
+            currentSchedulePayload.scheduleData.push({ date: dateDisplay, age: calculatedAge, vac: vacNameFull });
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
@@ -324,11 +283,9 @@
             lastDate = dateDisplay;
         });
 
-        // ส่งข้อมูลบันทึกคิวงานหลังบ้าน
-        fetch(SCRIPT_URL, {
-            method: 'POST',
-            body: JSON.stringify({ action: "saveTasks", tasks: tasksToSave })
-        }).then(res => console.log("บันทึกคิวงานสำเร็จ")).catch(err => console.error("Error saving tasks"));
+        // ส่งข้อมูลบันทึกคิวงานหลังบ้าน (เงียบๆ)
+        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "saveTasks", tasks: tasksToSave }) })
+        .then(res => console.log("บันทึกคิวงานสำเร็จ")).catch(err => console.error("Error saving tasks"));
 
         const today = new Date();
         document.getElementById('lblPrintDate').innerText = formatDateThai(today) + " " + today.toLocaleTimeString('th-TH');
@@ -338,46 +295,36 @@
         document.getElementById('a4Section').style.display = 'flex';
     }
 
-    // ⚡️ ฟังก์ชันใหม่: แคปหน้าจอเป็นภาพและส่งไปที่ Apps Script (แก้ปัญหาขนาดรูปและแจ้งเตือน)
-    function sendImageToLine() {
+    // ⚡️ ฟังก์ชันใหม่: ส่งตารางสรุปเป็น "การ์ด" เข้า LINE
+    function sendScheduleToLine() {
         const btn = document.getElementById('btnSendLine');
-        btn.innerText = "⏳ กำลังประมวลผลรูปภาพ...";
+        btn.innerText = "⏳ กำลังส่งการ์ดเข้า LINE...";
         btn.disabled = true;
         btn.style.opacity = "0.7";
 
-        const element = document.getElementById('a4Paper');
-        // ปรับลดสเกลลงนิดหน่อย เพื่อควบคุมขนาดไฟล์
-        html2canvas(element, { scale: 1.5 }).then(canvas => {
-            // เข้ารหัสภาพเป็น JPEG แทน PNG จะทำให้ขนาดไฟล์เล็กลงหลายเท่า ส่งผ่าน LINE สบายๆ
-            const base64Data = canvas.toDataURL("image/jpeg", 0.7).split(',')[1];
-            const farm = document.getElementById('lblFarm').innerText;
-
-            fetch(SCRIPT_URL, {
-                method: 'POST',
-                body: JSON.stringify({ action: "sendImage", farmName: farm, imageB64: base64Data })
-            }).then(res => res.json())
-            .then(data => {
-                if(data.status === "success"){
-                    btn.innerText = "✅ ส่งรูปลงกลุ่มสำเร็จ!";
-                    btn.style.background = "#16a34a";
-                } else {
-                    // โชว์สาเหตุที่แท้จริงจากระบบหลังบ้านบนปุ่มเลย
-                    btn.innerText = "❌ " + (data.message || "เกิดข้อผิดพลาด");
-                    btn.style.background = "#dc2626";
-                }
-                
-                setTimeout(() => {
-                    btn.innerText = "📲 ส่งรูปโปรแกรมเข้ากลุ่ม LINE";
-                    btn.style.background = "#0284c7";
-                    btn.disabled = false;
-                    btn.style.opacity = "1";
-                }, 6000);
-            }).catch(err => {
-                btn.innerText = "❌ เชื่อมต่อเซิร์ฟเวอร์ไม่ได้";
+        fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: "sendScheduleCard", ...currentSchedulePayload })
+        }).then(res => res.json())
+        .then(data => {
+            if(data.status === "success"){
+                btn.innerText = "✅ ส่งการ์ดตารางสำเร็จ!";
+                btn.style.background = "#16a34a";
+            } else {
+                btn.innerText = "❌ " + (data.message || "เกิดข้อผิดพลาด");
                 btn.style.background = "#dc2626";
+            }
+            setTimeout(() => {
+                btn.innerText = "📲 ส่งการ์ดโปรแกรมเข้า LINE";
+                btn.style.background = "#0284c7";
                 btn.disabled = false;
                 btn.style.opacity = "1";
-            });
+            }, 5000);
+        }).catch(err => {
+            btn.innerText = "❌ เชื่อมต่อไม่ได้";
+            btn.style.background = "#dc2626";
+            btn.disabled = false;
+            btn.style.opacity = "1";
         });
     }
 </script>
