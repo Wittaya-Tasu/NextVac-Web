@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>[NextVac: Smart Vaccine Program By SVS]</title>
+    <title>.[NextVac: Smart Vaccine Program By SVS]</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
     
     <style>
@@ -53,7 +53,7 @@
     <h2>[NextVac : Smart Vaccine Program By SVS]</h2>
     <div id="loading" style="text-align:center; font-weight:bold; color:#0369a1;">⏳ เชื่อมต่อระบบ...</div>
 
-    <form id="mainForm" style="display:none;" onsubmit="generateA4(event)">
+    <form id="mainForm" style="display:none;" onsubmit="(event)">
         <label>เลือกภาค</label>
         <select id="regionSelect" onchange="updateFarms()" required><option value="">-- เลือกภาค --</option></select>
 
@@ -233,25 +233,41 @@
         
         const baseDateObj = new Date(admDate);
         
+        // ⚡️ สร้างรหัสชุดสุกร (Batch ID) อัตโนมัติ (เช่น B-20260428-5678)
+        const batchId = `B-${new Date().getFullYear()}${String(new Date().getMonth()+1).padStart(2,'0')}${String(new Date().getDate()).padStart(2,'0')}-${Math.floor(1000 + Math.random() * 9000)}`;
+
         // เซ็ตค่าตัวแปรเก็บข้อมูลส่ง LINE
         currentSchedulePayload = {
             farmName: farm,
-            summaryInfo: { type: typeText, qty: qty, admDate: formatDateThai(admDate) },
+            // ⚡️ ส่ง Batch ID ไปให้สมองกลหลังบ้านด้วย
+            summaryInfo: { type: typeText, qty: qty, admDate: formatDateThai(admDate), batchId: batchId },
             scheduleData: []
         };
 
         const firstRowDateDisplay = formatDateThai(baseDateObj);
         let lastDate = firstRowDateDisplay; 
 
-        // แถวรับเข้า
+        // ⚡️ แถวแรกของ LINE Card: รับเข้าสุกร
+        currentSchedulePayload.scheduleData.push({
+            date: firstRowDateDisplay,
+            age: initialAge,
+            vac: "รับเข้าสุกร"
+        });
+
+        // แถวแรกของ PDF: รับเข้า
         const trInitial = document.createElement('tr');
         trInitial.style.backgroundColor = "#f8fafc"; 
         trInitial.innerHTML = `
-            <td>${firstRowDateDisplay}</td><td>${initialAge}</td><td>-</td><td>-</td>
-            <td class="note-col"><strong>รับเข้าสุกร</strong></td><td></td>
+            <td>${firstRowDateDisplay}</td>
+            <td>${initialAge}</td>
+            <td>-</td>
+            <td>-</td>
+            <td class="note-col"><strong>รับเข้าสุกร</strong></td>
+            <td></td>
         `;
         tbody.appendChild(trInitial);
 
+        // วาดตารางวัคซีน
         const progRows = masterData.programs.filter(p => p.id === progId).sort((a, b) => a.offset - b.offset);
         let tasksToSave = [];
 
@@ -265,7 +281,13 @@
             const uniqueTaskId = `TK-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 100)}`;
             const vacNameFull = row.tradeName ? `${row.vacType} (${row.tradeName})` : row.vacType;
 
-            tasksToSave.push({ taskId: uniqueTaskId, farmName: farm, swineType: typeText, targetDate: standardDateForDB, vaccineName: vacNameFull });
+            tasksToSave.push({
+                taskId: uniqueTaskId,
+                farmName: farm,
+                swineType: typeText,
+                targetDate: standardDateForDB,
+                vaccineName: vacNameFull
+            });
             
             // เก็บข้อมูลวัคซีนแต่ละเข็ม ไว้สร้างการ์ด LINE
             currentSchedulePayload.scheduleData.push({ date: dateDisplay, age: calculatedAge, vac: vacNameFull });
@@ -284,8 +306,10 @@
         });
 
         // ส่งข้อมูลบันทึกคิวงานหลังบ้าน (เงียบๆ)
-        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "saveTasks", tasks: tasksToSave }) })
-        .then(res => console.log("บันทึกคิวงานสำเร็จ")).catch(err => console.error("Error saving tasks"));
+        fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: "saveTasks", tasks: tasksToSave })
+        }).then(res => console.log("บันทึกคิวงานสำเร็จ")).catch(err => console.error("Error saving tasks"));
 
         const today = new Date();
         document.getElementById('lblPrintDate').innerText = formatDateThai(today) + " " + today.toLocaleTimeString('th-TH');
