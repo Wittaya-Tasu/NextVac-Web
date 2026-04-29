@@ -197,14 +197,13 @@
 <script>
     // ==========================================
     // ⚠️ นำ URL เว็บแอปจาก Google Apps Script มาวางที่นี่ครับ
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw-pvzJEp38w_bFhal93iDQI2MLhdEZZeZ38geKDtVRDEOUQfJBQRdSE6KBHETPfoZx/exec';
+    const SCRIPT_URL = 'เอา_URL_เว็บแอป_ของคุณมาวางแทนที่ข้อความนี้ครับ';
     // ==========================================
     
     let masterData = { regions: {}, programs: [] };
-    let currentUser = null; // เก็บข้อมูลคนที่ Login เข้ามา
+    let currentUser = null; 
     let currentSchedulePayload = null; 
 
-    // ดึงข้อมูลตั้งแต่เปิดหน้าเว็บ แต่ซ่อนไว้จนกว่าจะ Login ผ่าน
     window.onload = async () => {
         try {
             const [regRes, progRes] = await Promise.all([
@@ -219,7 +218,6 @@
         } catch (e) { document.getElementById('loading').innerText = "❌ ระบบขัดข้อง ไม่สามารถดึงข้อมูลได้"; }
     };
 
-    // ⚡️ ฟังก์ชัน Login
     function doLogin(e) {
         e.preventDefault();
         const btn = document.getElementById('btnLogin');
@@ -238,13 +236,12 @@
                 document.getElementById('loginSection').style.display = 'none';
                 document.getElementById('appWrapper').style.display = 'block';
                 
-                // แสดงชื่อคน Login ตามสิทธิ์
                 let displayName = currentUser.username;
                 if(currentUser.role === "Vet") displayName = currentUser.vetName;
                 if(currentUser.role === "Farm") displayName = currentUser.farmName;
                 document.getElementById('welcomeText').innerText = `👤 ผู้ใช้งาน: ${displayName} [${currentUser.role}]`;
 
-                setupRoleUI(); // จัดการหน้าตาตามสิทธิ์
+                setupRoleUI(); 
             } else {
                 alert("❌ " + data.message);
                 btn.innerText = "เข้าสู่ระบบ";
@@ -257,14 +254,12 @@
         });
     }
 
-    // ⚡️ จัดการหน้าจอตามสิทธิ์ (Admin, Vet, Farm)
     function setupRoleUI() {
         const regSelect = document.getElementById('regionSelect');
         const farmSelect = document.getElementById('farmSelect');
         regSelect.innerHTML = '<option value="">-- เลือกภาค --</option>';
 
         if (currentUser.role === "Farm") {
-            // สิทธิ์ฟาร์ม: ล็อกตายตัวให้เป็นฟาร์มของตัวเองเท่านั้น
             regSelect.innerHTML = `<option value="${currentUser.region}">${currentUser.region}</option>`;
             regSelect.disabled = true;
             farmSelect.innerHTML = `<option value="${currentUser.farmName}">${currentUser.farmName}</option>`;
@@ -274,17 +269,14 @@
             updatePrograms(); 
 
         } else if (currentUser.role === "Vet") {
-            // สิทธิ์สัตวแพทย์: โชว์แท็บเมนู
             document.getElementById('vetTabs').style.display = 'flex';
             
-            // 1. ดึงภาคเฉพาะที่มีฟาร์มของคุณหมอท่านนี้ดูแลอยู่
             const vetRegions = new Set();
             Object.keys(masterData.regions).forEach(reg => {
                 if (masterData.regions[reg].some(f => f.vet === currentUser.vetName)) vetRegions.add(reg);
             });
             vetRegions.forEach(reg => regSelect.add(new Option(reg, reg)));
 
-            // 2. โหลดรายชื่อฟาร์มใส่ในหน้า "จัดการฟาร์ม"
             const mngSelect = document.getElementById('manageFarmSelect');
             mngSelect.innerHTML = '<option value="">-- เลือกฟาร์มที่ต้องการจัดการ --</option>';
             Object.keys(masterData.regions).forEach(reg => {
@@ -294,12 +286,10 @@
             });
 
         } else if (currentUser.role === "Admin") {
-            // สิทธิ์ Admin: โชว์ทุกภาค
             Object.keys(masterData.regions).forEach(reg => regSelect.add(new Option(reg, reg)));
         }
     }
 
-    // ⚡️ สลับแท็บสำหรับ Vet
     function switchTab(tabName) {
         document.getElementById('btnTabCreate').className = tabName === 'create' ? "tab-btn tab-active" : "tab-btn tab-inactive";
         document.getElementById('btnTabManage').className = tabName === 'manage' ? "tab-btn tab-active" : "tab-btn tab-inactive";
@@ -307,7 +297,6 @@
         document.getElementById('manageSection').style.display = tabName === 'manage' ? "block" : "none";
     }
 
-    // ⚡️ สัตวแพทย์กดอัปเดตข้อมูลให้ฟาร์ม
     function updateFarmData() {
         const farm = document.getElementById('manageFarmSelect').value;
         const newUser = document.getElementById('newFarmUser').value;
@@ -337,13 +326,12 @@
     }
 
     function updateFarms() {
-        if(currentUser.role === "Farm") return; // ถ้าเป็นฟาร์ม ไม่ต้องทำอะไร
+        if(currentUser.role === "Farm") return; 
         const region = document.getElementById('regionSelect').value;
         const farmSelect = document.getElementById('farmSelect');
         farmSelect.innerHTML = '<option value="">-- เลือกฟาร์ม --</option>';
         if (region && masterData.regions[region]) {
             masterData.regions[region].forEach(f => {
-                // ถ้าเป็น Vet ให้โชว์เฉพาะฟาร์มของตัวเอง
                 if (currentUser.role === "Vet" && f.vet !== currentUser.vetName) return; 
                 let opt = new Option(f.name, f.name);
                 opt.dataset.vet = f.vet;
@@ -443,8 +431,17 @@
             lastDate = dateDisplay;
         });
 
-        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "saveTasks", tasks: tasksToSave }) })
-        .then(res => console.log("บันทึกคิวงานสำเร็จ")).catch(err => console.error("Error saving tasks"));
+        // ⚡️ ส่งข้อมูลไปให้สมองกลบันทึกทั้ง Queue_Tasks และ Batch_Master
+        fetch(SCRIPT_URL, { 
+            method: 'POST', 
+            body: JSON.stringify({ 
+                action: "saveTasks", 
+                batchInfo: {
+                    batchId: batchId, farmName: farm, region: region, type: typeText, qty: qty, admDate: admDate, vetName: farmOpt.dataset.vet
+                },
+                tasks: tasksToSave 
+            }) 
+        }).then(res => console.log("บันทึกคิวงานและข้อมูล Batch สำเร็จ")).catch(err => console.error("Error saving tasks"));
 
         const today = new Date();
         document.getElementById('lblPrintDate').innerText = formatDateThai(today) + " " + today.toLocaleTimeString('th-TH');
