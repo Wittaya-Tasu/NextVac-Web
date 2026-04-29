@@ -3,37 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>[NextVac: Smart Vaccine Program By SVS]</title>
+    <title>.[NextVac: Smart Vaccine Program By SVS]</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
     
     <style>
-        /* =======================================================
-           📌 โซน 1: ตั้งค่าตัวอักษร (ปรับแก้ตัวเลข pt ได้เอง) 
-           ======================================================= */
         :root {
-            --font-size-main: 13pt;      /* ขนาดตัวอักษรหลักทั้งหมดในแบบฟอร์ม */
-            --font-size-header: 16pt;    /* ขนาดตัวอักษรหัวข้อ "โปรแกรมวัคซีน: ..." */
-            --font-size-note: 12pt;      /* ขนาดตัวอักษรในช่อง "หมายเหตุ" */
-            --font-size-trace: 10pt;     /* ขนาดตัวอักษรพิมพ์เมื่อ/รหัสเอกสาร */
-            
-        /* =======================================================
-           📌 โซน 2: ตั้งค่าระยะห่างลายเซ็น (ปรับขยับขึ้นลงได้เอง) 
-           ======================================================= */
+            --font-size-main: 13pt;      
+            --font-size-header: 16pt;    
+            --font-size-note: 12pt;      
+            --font-size-trace: 10pt;     
             --sig-margin-top: 50px; 
             --sig-space-height: 50px; 
             --sig-margin-bottom: 30px; 
         }
-        /* ======================================================= */
 
         body { font-family: 'Sarabun', sans-serif; background-color: #f1f5f9; padding: 20px; color: #1e293b; margin: 0; }
-        .container { max-width: 600px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        .container { max-width: 600px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin-bottom: 20px;}
         h2 { color: #0369a1; text-align: center; margin-top: 0; font-weight: 700; }
         label { font-weight: 600; display: block; margin-top: 15px; font-size: 16px; }
         select, input { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-family: 'Sarabun', sans-serif; font-size: 16px; }
         button.btn-primary { width: 100%; padding: 15px; background: #0284c7; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 18px; margin-top: 25px; cursor: pointer; font-family: 'Sarabun', sans-serif;}
         button.btn-print { padding: 10px 20px; background: #16a34a; color: white; border: none; border-radius: 8px; cursor: pointer; font-family: 'Sarabun', sans-serif; font-size: 16px; font-weight: bold;}
         
-        /* สไตล์หน้ากระดาษ A4 */
+        /* เมนู Tabs สำหรับ Vet */
+        .tab-menu { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
+        .tab-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-family: 'Sarabun'; font-weight: bold; font-size: 16px; transition: 0.3s; }
+        .tab-active { background: #0369a1; color: white; }
+        .tab-inactive { background: #e2e8f0; color: #475569; }
+
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .user-info { font-weight: bold; color: #0369a1; }
+        .btn-logout { background: #dc2626; color: white; padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer; font-family: 'Sarabun'; font-weight: bold;}
+
+        /* A4 Styles */
         .a4-wrapper { display: none; flex-direction: column; align-items: center; }
         .a4-page { width: 210mm; height: 297mm; background: white; margin: 0 auto; padding: 10mm 15mm; box-sizing: border-box; font-size: var(--font-size-main); position: relative; overflow: hidden; color: black; display: flex; flex-direction: column; }
         .a4-header-text { text-align: center; font-size: var(--font-size-header); font-weight: bold; margin-bottom: 15px; flex-shrink: 0; }
@@ -58,45 +60,88 @@
 </head>
 <body>
 
-<div class="container no-print" id="formSection">
-    <h2>[NextVac : Smart Vaccine Program By SVS]</h2>
-    <div id="loading" style="text-align:center; font-weight:bold; color:#0369a1;">⏳ เชื่อมต่อระบบ...</div>
+<div id="loading" style="text-align:center; font-weight:bold; color:#0369a1; padding:50px; font-size:20px;">⏳ กำลังโหลดข้อมูลระบบ...</div>
 
-    <form id="mainForm" style="display:none;" onsubmit="generateA4(event)">
-        <label>เลือกภาค</label>
-        <select id="regionSelect" onchange="updateFarms()" required><option value="">-- เลือกภาค --</option></select>
-
-        <label>ชื่อฟาร์ม</label>
-        <select id="farmSelect" required><option value="">-- เลือกภาคก่อน --</option></select>
-
-        <label>ประเภทของสุกร</label>
-        <select id="swineType" onchange="updatePrograms()" required>
-            <option value="">-- เลือกประเภท --</option>
-            <option value="หย่านม-ขุน : Wean-Finish">หย่านม-ขุน : Wean-Finish</option>
-            <option value="อนุบาล-ขุน : Nursery-Finish">อนุบาล-ขุน : Nursery-Finish</option>
-            <option value="หย่านม-รุ่นพันธุ์ : Wean-Selection">หย่านม-รุ่นพันธุ์ : Wean-Selection</option>
-            <option value="สาวทดแทน : Gilt Repacement">สาวทดแทน : Gilt Repacement</option>
-            <option value="พ่อพันธุ์ทดแทน : Boar Repacement">พ่อพันธุ์ทดแทน : Boar Repacement</option>
-        </select>
-
-        <label>เลือกโปรแกรมวัคซีน</label>
-        <select id="programSelect" required><option value="">-- เลือกประเภทสุกรก่อน --</option></select>
-
-        <div style="background:#f8fafc; padding:15px; border-radius:8px; margin-top:20px; border:1px solid #e2e8f0;">
-            <label style="margin-top:0;">วันที่รับเข้า</label>
-            <input type="date" id="admissionDate" required>
-            <label>สุกรทั้งหมด (ตัว)</label>
-            <input type="number" id="totalQty" required>
-            <label>อายุรับเข้า (สัปดาห์)</label>
-            <input type="number" id="pigAge" required step="1">
-        </div>
-        <button type="submit" class="btn-primary">สร้างโปรแกรมวัคซีน</button>
+<div class="container no-print" id="loginSection" style="display:none; margin-top: 50px;">
+    <h2>🔐 เข้าสู่ระบบ NextVac</h2>
+    <form onsubmit="doLogin(event)">
+        <label>ชื่อผู้ใช้งาน (Username)</label>
+        <input type="text" id="txtUser" required>
+        <label>รหัสผ่าน (Password)</label>
+        <input type="password" id="txtPass" required>
+        <button type="submit" id="btnLogin" class="btn-primary">เข้าสู่ระบบ</button>
     </form>
+</div>
+
+<div id="appWrapper" style="display:none;" class="no-print">
+    
+    <div class="top-bar container">
+        <span class="user-info" id="welcomeText">👤 ผู้ใช้งาน: </span>
+        <button class="btn-logout" onclick="location.reload()">🚪 ออกจากระบบ</button>
+    </div>
+
+    <div class="tab-menu container" id="vetTabs" style="display:none; padding:10px; background:transparent; box-shadow:none;">
+        <button id="btnTabCreate" class="tab-btn tab-active" onclick="switchTab('create')">สร้างโปรแกรมวัคซีน</button>
+        <button id="btnTabManage" class="tab-btn tab-inactive" onclick="switchTab('manage')">จัดการรหัสผ่าน / LINE ฟาร์ม</button>
+    </div>
+
+    <div class="container" id="manageSection" style="display:none; background:#f8fafc; border:2px solid #cbd5e1;">
+        <h2 style="color:#0f172a;">🛠️ ตั้งค่าข้อมูลฟาร์ม</h2>
+        <p style="text-align:center; color:#64748b; margin-top:-10px;">(สำหรับเปลี่ยนรหัสเข้าใช้งาน หรือผูกกลุ่ม LINE ให้ฟาร์ม)</p>
+        
+        <label>เลือกฟาร์มที่ต้องการตั้งค่า</label>
+        <select id="manageFarmSelect"></select>
+
+        <label style="color:#dc2626;">👉 เปลี่ยน Username หน้าฟาร์ม (เว้นว่างไว้ถ้าไม่เปลี่ยน)</label>
+        <input type="text" id="newFarmUser" placeholder="เช่น farm_phayao">
+
+        <label style="color:#dc2626;">👉 เปลี่ยน Password หน้าฟาร์ม (เว้นว่างไว้ถ้าไม่เปลี่ยน)</label>
+        <input type="text" id="newFarmPass" placeholder="เช่น pass1234">
+
+        <label style="color:#16a34a;">👉 ผูกรหัส LINE Group ID (ขึ้นต้นด้วยตัว C)</label>
+        <input type="text" id="newLineId" placeholder="นำรหัสจากแชทบอทมาวางที่นี่">
+
+        <button id="btnUpdateFarm" class="btn-primary" style="background:#0f172a;" onclick="updateFarmData()">💾 บันทึกข้อมูลฟาร์ม</button>
+    </div>
+
+    <div class="container" id="formSection">
+        <h2>สร้างโปรแกรมวัคซีน</h2>
+        <form onsubmit="generateA4(event)">
+            <label>เลือกภาค</label>
+            <select id="regionSelect" onchange="updateFarms()" required><option value="">-- เลือกภาค --</option></select>
+
+            <label>ชื่อฟาร์ม</label>
+            <select id="farmSelect" required><option value="">-- เลือกภาคก่อน --</option></select>
+
+            <label>ประเภทของสุกร</label>
+            <select id="swineType" onchange="updatePrograms()" required>
+                <option value="">-- เลือกประเภท --</option>
+                <option value="หย่านม-ขุน : Wean-Finish">หย่านม-ขุน : Wean-Finish</option>
+                <option value="อนุบาล-ขุน : Nursery-Finish">อนุบาล-ขุน : Nursery-Finish</option>
+                <option value="หย่านม-รุ่นพันธุ์ : Wean-Selection">หย่านม-รุ่นพันธุ์ : Wean-Selection</option>
+                <option value="สาวทดแทน : Gilt Repacement">สาวทดแทน : Gilt Repacement</option>
+                <option value="พ่อพันธุ์ทดแทน : Boar Repacement">พ่อพันธุ์ทดแทน : Boar Repacement</option>
+            </select>
+
+            <label>เลือกโปรแกรมวัคซีน</label>
+            <select id="programSelect" required><option value="">-- เลือกประเภทสุกรก่อน --</option></select>
+
+            <div style="background:#f8fafc; padding:15px; border-radius:8px; margin-top:20px; border:1px solid #e2e8f0;">
+                <label style="margin-top:0;">วันที่รับเข้า</label>
+                <input type="date" id="admissionDate" required>
+                <label>สุกรทั้งหมด (ตัว)</label>
+                <input type="number" id="totalQty" required>
+                <label>อายุรับเข้า (สัปดาห์)</label>
+                <input type="number" id="pigAge" required step="1">
+            </div>
+            <button type="submit" class="btn-primary">ออกรายงานโปรแกรมวัคซีน</button>
+        </form>
+    </div>
 </div>
 
 <div class="a4-wrapper" id="a4Section">
     <div class="no-print" style="margin-bottom:20px; width:210mm; display:flex; justify-content:space-between; align-items:center;">
-        <button style="padding:10px; cursor:pointer;" onclick="location.reload()">⬅️ เริ่มใหม่</button>
+        <button style="padding:10px; cursor:pointer;" onclick="closeA4()">⬅️ ย้อนกลับ</button>
         <button id="btnSendLine" onclick="sendScheduleToLine()" style="padding:10px 20px; background:#0284c7; color:white; border:none; border-radius:8px; cursor:pointer; font-family:'Sarabun'; font-size:16px; font-weight:bold;">📲 ส่งการ์ดโปรแกรมเข้า LINE</button>
         <button class="btn-print" onclick="window.print()">🖨️ พิมพ์ / บันทึกเป็น PDF</button>
     </div>
@@ -156,10 +201,10 @@
     // ==========================================
     
     let masterData = { regions: {}, programs: [] };
-    
-    // ⚡️ ตัวแปรเก็บข้อมูลโปรแกรมวัคซีนสำหรับสร้างการ์ด
+    let currentUser = null; // เก็บข้อมูลคนที่ Login เข้ามา
     let currentSchedulePayload = null; 
 
+    // ดึงข้อมูลตั้งแต่เปิดหน้าเว็บ แต่ซ่อนไว้จนกว่าจะ Login ผ่าน
     window.onload = async () => {
         try {
             const [regRes, progRes] = await Promise.all([
@@ -168,19 +213,138 @@
             ]);
             masterData.regions = regRes.data;
             masterData.programs = progRes.data;
-            const regSelect = document.getElementById('regionSelect');
-            Object.keys(masterData.regions).forEach(reg => regSelect.add(new Option(reg, reg)));
+            
             document.getElementById('loading').style.display = 'none';
-            document.getElementById('mainForm').style.display = 'block';
-        } catch (e) { document.getElementById('loading').innerText = "❌ ระบบขัดข้อง"; }
+            document.getElementById('loginSection').style.display = 'block';
+        } catch (e) { document.getElementById('loading').innerText = "❌ ระบบขัดข้อง ไม่สามารถดึงข้อมูลได้"; }
     };
 
+    // ⚡️ ฟังก์ชัน Login
+    function doLogin(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btnLogin');
+        btn.innerText = "⏳ กำลังตรวจสอบ...";
+        btn.disabled = true;
+
+        const u = document.getElementById('txtUser').value;
+        const p = document.getElementById('txtPass').value;
+
+        fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: "login", username: u, password: p })
+        }).then(res => res.json()).then(data => {
+            if(data.status === "success") {
+                currentUser = data.user;
+                document.getElementById('loginSection').style.display = 'none';
+                document.getElementById('appWrapper').style.display = 'block';
+                
+                // แสดงชื่อคน Login ตามสิทธิ์
+                let displayName = currentUser.username;
+                if(currentUser.role === "Vet") displayName = currentUser.vetName;
+                if(currentUser.role === "Farm") displayName = currentUser.farmName;
+                document.getElementById('welcomeText').innerText = `👤 ผู้ใช้งาน: ${displayName} [${currentUser.role}]`;
+
+                setupRoleUI(); // จัดการหน้าตาตามสิทธิ์
+            } else {
+                alert("❌ " + data.message);
+                btn.innerText = "เข้าสู่ระบบ";
+                btn.disabled = false;
+            }
+        }).catch(err => {
+            alert("❌ เชื่อมต่อเซิร์ฟเวอร์ไม่ได้");
+            btn.innerText = "เข้าสู่ระบบ";
+            btn.disabled = false;
+        });
+    }
+
+    // ⚡️ จัดการหน้าจอตามสิทธิ์ (Admin, Vet, Farm)
+    function setupRoleUI() {
+        const regSelect = document.getElementById('regionSelect');
+        const farmSelect = document.getElementById('farmSelect');
+        regSelect.innerHTML = '<option value="">-- เลือกภาค --</option>';
+
+        if (currentUser.role === "Farm") {
+            // สิทธิ์ฟาร์ม: ล็อกตายตัวให้เป็นฟาร์มของตัวเองเท่านั้น
+            regSelect.innerHTML = `<option value="${currentUser.region}">${currentUser.region}</option>`;
+            regSelect.disabled = true;
+            farmSelect.innerHTML = `<option value="${currentUser.farmName}">${currentUser.farmName}</option>`;
+            farmSelect.options[0].dataset.vet = currentUser.vetName;
+            farmSelect.options[0].dataset.manager = currentUser.managerName;
+            farmSelect.disabled = true;
+            updatePrograms(); 
+
+        } else if (currentUser.role === "Vet") {
+            // สิทธิ์สัตวแพทย์: โชว์แท็บเมนู
+            document.getElementById('vetTabs').style.display = 'flex';
+            
+            // 1. ดึงภาคเฉพาะที่มีฟาร์มของคุณหมอท่านนี้ดูแลอยู่
+            const vetRegions = new Set();
+            Object.keys(masterData.regions).forEach(reg => {
+                if (masterData.regions[reg].some(f => f.vet === currentUser.vetName)) vetRegions.add(reg);
+            });
+            vetRegions.forEach(reg => regSelect.add(new Option(reg, reg)));
+
+            // 2. โหลดรายชื่อฟาร์มใส่ในหน้า "จัดการฟาร์ม"
+            const mngSelect = document.getElementById('manageFarmSelect');
+            mngSelect.innerHTML = '<option value="">-- เลือกฟาร์มที่ต้องการจัดการ --</option>';
+            Object.keys(masterData.regions).forEach(reg => {
+                masterData.regions[reg].forEach(f => {
+                    if (f.vet === currentUser.vetName) mngSelect.add(new Option(f.name, f.name));
+                });
+            });
+
+        } else if (currentUser.role === "Admin") {
+            // สิทธิ์ Admin: โชว์ทุกภาค
+            Object.keys(masterData.regions).forEach(reg => regSelect.add(new Option(reg, reg)));
+        }
+    }
+
+    // ⚡️ สลับแท็บสำหรับ Vet
+    function switchTab(tabName) {
+        document.getElementById('btnTabCreate').className = tabName === 'create' ? "tab-btn tab-active" : "tab-btn tab-inactive";
+        document.getElementById('btnTabManage').className = tabName === 'manage' ? "tab-btn tab-active" : "tab-btn tab-inactive";
+        document.getElementById('formSection').style.display = tabName === 'create' ? "block" : "none";
+        document.getElementById('manageSection').style.display = tabName === 'manage' ? "block" : "none";
+    }
+
+    // ⚡️ สัตวแพทย์กดอัปเดตข้อมูลให้ฟาร์ม
+    function updateFarmData() {
+        const farm = document.getElementById('manageFarmSelect').value;
+        const newUser = document.getElementById('newFarmUser').value;
+        const newPass = document.getElementById('newFarmPass').value;
+        const newLine = document.getElementById('newLineId').value;
+
+        if(!farm) { alert("กรุณาเลือกฟาร์มก่อนครับ"); return; }
+        if(!newUser && !newPass && !newLine) { alert("กรุณากรอกข้อมูลอย่างน้อย 1 ช่องเพื่ออัปเดตครับ"); return; }
+
+        const btn = document.getElementById('btnUpdateFarm');
+        btn.innerText = "⏳ กำลังบันทึก...";
+        btn.disabled = true;
+
+        fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: "updateFarmByVet", targetFarm: farm, newUsername: newUser, newPassword: newPass, newLineId: newLine })
+        }).then(res => res.json()).then(data => {
+            if(data.status === "success") {
+                alert("✅ อัปเดตข้อมูลฟาร์มเรียบร้อยแล้ว!");
+                document.getElementById('newFarmUser').value = "";
+                document.getElementById('newFarmPass').value = "";
+                document.getElementById('newLineId').value = "";
+            } else { alert("❌ เกิดข้อผิดพลาดในการบันทึก"); }
+            btn.innerText = "💾 บันทึกข้อมูลฟาร์ม";
+            btn.disabled = false;
+        }).catch(err => { alert("❌ เชื่อมต่อไม่ได้"); btn.innerText = "💾 บันทึกข้อมูลฟาร์ม"; btn.disabled = false; });
+    }
+
     function updateFarms() {
+        if(currentUser.role === "Farm") return; // ถ้าเป็นฟาร์ม ไม่ต้องทำอะไร
         const region = document.getElementById('regionSelect').value;
         const farmSelect = document.getElementById('farmSelect');
         farmSelect.innerHTML = '<option value="">-- เลือกฟาร์ม --</option>';
         if (region && masterData.regions[region]) {
             masterData.regions[region].forEach(f => {
+                // ถ้าเป็น Vet ให้โชว์เฉพาะฟาร์มของตัวเอง
+                if (currentUser.role === "Vet" && f.vet !== currentUser.vetName) return; 
                 let opt = new Option(f.name, f.name);
                 opt.dataset.vet = f.vet;
                 opt.dataset.manager = f.manager;
@@ -194,20 +358,11 @@
         const type = document.getElementById('swineType').value;
         const currentFarm = document.getElementById('farmSelect').value; 
         const progSelect = document.getElementById('programSelect');
-        
         progSelect.innerHTML = '<option value="">-- เลือกโปรแกรม --</option>';
-        
-        // ⚡️ กรอง 2 ชั้น: สุกรประเภทเดียวกัน + (Global หรือ ฟาร์มตัวเองเท่านั้น)
-        const filtered = masterData.programs.filter(p => 
-            p.type === type && (p.owner === 'Global' || p.owner === currentFarm)
-        );
-        
+        const filtered = masterData.programs.filter(p => p.type === type && (p.owner === 'Global' || p.owner === currentFarm));
         const seenIds = new Set();
         filtered.forEach(p => {
-            if (!seenIds.has(p.id)) { 
-                seenIds.add(p.id); 
-                progSelect.add(new Option(p.name, p.id)); 
-            }
+            if (!seenIds.has(p.id)) { seenIds.add(p.id); progSelect.add(new Option(p.name, p.id)); }
         });
     }
 
@@ -221,6 +376,11 @@
         const days = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
         const months = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
         return `วัน${days[d.getDay()]} ที่ ${d.getDate()} ${months[d.getMonth()]} พ.ศ.${d.getFullYear() + 543}`;
+    }
+
+    function closeA4() {
+        document.getElementById('a4Section').style.display = 'none';
+        document.getElementById('appWrapper').style.display = 'block';
     }
 
     function generateA4(e) {
@@ -248,44 +408,20 @@
 
         const tbody = document.getElementById('vaccineTableBody');
         tbody.innerHTML = '';
-        
         const baseDateObj = new Date(admDate);
-        
-        // ⚡️ สร้างรหัสชุดสุกร (Batch ID) อัตโนมัติ (เช่น B-20260428-5678)
         const batchId = `B-${new Date().getFullYear()}${String(new Date().getMonth()+1).padStart(2,'0')}${String(new Date().getDate()).padStart(2,'0')}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-        // เซ็ตค่าตัวแปรเก็บข้อมูลส่ง LINE
-        currentSchedulePayload = {
-            farmName: farm,
-            // ⚡️ ส่ง Batch ID ไปให้สมองกลหลังบ้านด้วย
-            summaryInfo: { type: typeText, qty: qty, admDate: formatDateThai(admDate), batchId: batchId },
-            scheduleData: []
-        };
+        currentSchedulePayload = { farmName: farm, summaryInfo: { type: typeText, qty: qty, admDate: formatDateThai(admDate), batchId: batchId }, scheduleData: [] };
 
         const firstRowDateDisplay = formatDateThai(baseDateObj);
         let lastDate = firstRowDateDisplay; 
+        currentSchedulePayload.scheduleData.push({ date: firstRowDateDisplay, age: initialAge, vac: "รับเข้าสุกร" });
 
-        // ⚡️ แถวแรกของ LINE Card: รับเข้าสุกร
-        currentSchedulePayload.scheduleData.push({
-            date: firstRowDateDisplay,
-            age: initialAge,
-            vac: "รับเข้าสุกร"
-        });
-
-        // แถวแรกของ PDF: รับเข้า
         const trInitial = document.createElement('tr');
         trInitial.style.backgroundColor = "#f8fafc"; 
-        trInitial.innerHTML = `
-            <td>${firstRowDateDisplay}</td>
-            <td>${initialAge}</td>
-            <td>-</td>
-            <td>-</td>
-            <td class="note-col"><strong>รับเข้าสุกร</strong></td>
-            <td></td>
-        `;
+        trInitial.innerHTML = `<td>${firstRowDateDisplay}</td><td>${initialAge}</td><td>-</td><td>-</td><td class="note-col"><strong>รับเข้าสุกร</strong></td><td></td>`;
         tbody.appendChild(trInitial);
 
-        // วาดตารางวัคซีน
         const progRows = masterData.programs.filter(p => p.id === progId).sort((a, b) => a.offset - b.offset);
         let tasksToSave = [];
 
@@ -294,80 +430,42 @@
             targetDateObj.setDate(targetDateObj.getDate() + parseInt(row.offset));
             const dateDisplay = formatDateThai(targetDateObj);
             const calculatedAge = Math.floor(initialAge + (parseInt(row.offset) / 7));
-            
             const standardDateForDB = targetDateObj.toISOString().split('T')[0];
             const uniqueTaskId = `TK-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 100)}`;
             const vacNameFull = row.tradeName ? `${row.vacType} (${row.tradeName})` : row.vacType;
 
-            tasksToSave.push({
-                taskId: uniqueTaskId,
-                farmName: farm,
-                swineType: typeText,
-                targetDate: standardDateForDB,
-                vaccineName: vacNameFull
-            });
-
-            // เก็บข้อมูลวัคซีนแต่ละเข็ม ไว้สร้างการ์ด LINE
+            tasksToSave.push({ taskId: uniqueTaskId, farmName: farm, swineType: typeText, targetDate: standardDateForDB, vaccineName: vacNameFull });
             currentSchedulePayload.scheduleData.push({ date: dateDisplay, age: calculatedAge, vac: vacNameFull });
 
             const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${dateDisplay === lastDate ? "" : dateDisplay}</td>
-                <td>${calculatedAge}</td>
-                <td>${row.vacType || '-'}</td>
-                <td>${row.tradeName || '-'}</td>
-                <td class="note-col">${row.note || ''}</td>
-                <td></td>
-            `;
+            tr.innerHTML = `<td>${dateDisplay === lastDate ? "" : dateDisplay}</td><td>${calculatedAge}</td><td>${row.vacType || '-'}</td><td>${row.tradeName || '-'}</td><td class="note-col">${row.note || ''}</td><td></td>`;
             tbody.appendChild(tr);
             lastDate = dateDisplay;
         });
 
-        // ส่งข้อมูลบันทึกคิวงานหลังบ้าน (เงียบๆ)
-        fetch(SCRIPT_URL, {
-            method: 'POST',
-            body: JSON.stringify({ action: "saveTasks", tasks: tasksToSave })
-        }).then(res => console.log("บันทึกคิวงานสำเร็จ")).catch(err => console.error("Error saving tasks"));
+        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "saveTasks", tasks: tasksToSave }) })
+        .then(res => console.log("บันทึกคิวงานสำเร็จ")).catch(err => console.error("Error saving tasks"));
 
         const today = new Date();
         document.getElementById('lblPrintDate').innerText = formatDateThai(today) + " " + today.toLocaleTimeString('th-TH');
         document.getElementById('lblRefId').innerText = `REF-${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}-${Math.floor(1000 + Math.random() * 9000)}`;
         document.title = `${farm}_${typeText}_${progName}_${formatDateThai(admDate).replace(/\//g,'-')}`;
-        document.getElementById('formSection').style.display = 'none';
+        document.getElementById('appWrapper').style.display = 'none';
         document.getElementById('a4Section').style.display = 'flex';
     }
 
-    // ⚡️ ฟังก์ชันใหม่: ส่งตารางสรุปเป็น "การ์ด" เข้า LINE
     function sendScheduleToLine() {
         const btn = document.getElementById('btnSendLine');
         btn.innerText = "⏳ กำลังส่งการ์ดเข้า LINE...";
         btn.disabled = true;
         btn.style.opacity = "0.7";
 
-        fetch(SCRIPT_URL, {
-            method: 'POST',
-            body: JSON.stringify({ action: "sendScheduleCard", ...currentSchedulePayload })
-        }).then(res => res.json())
-        .then(data => {
-            if(data.status === "success"){
-                btn.innerText = "✅ ส่งการ์ดตารางสำเร็จ!";
-                btn.style.background = "#16a34a";
-            } else {
-                btn.innerText = "❌ " + (data.message || "เกิดข้อผิดพลาด");
-                btn.style.background = "#dc2626";
-            }
-            setTimeout(() => {
-                btn.innerText = "📲 ส่งการ์ดโปรแกรมเข้า LINE";
-                btn.style.background = "#0284c7";
-                btn.disabled = false;
-                btn.style.opacity = "1";
-            }, 5000);
-        }).catch(err => {
-            btn.innerText = "❌ เชื่อมต่อไม่ได้";
-            btn.style.background = "#dc2626";
-            btn.disabled = false;
-            btn.style.opacity = "1";
-        });
+        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "sendScheduleCard", ...currentSchedulePayload }) })
+        .then(res => res.json()).then(data => {
+            if(data.status === "success"){ btn.innerText = "✅ ส่งการ์ดตารางสำเร็จ!"; btn.style.background = "#16a34a"; } 
+            else { btn.innerText = "❌ " + (data.message || "เกิดข้อผิดพลาด"); btn.style.background = "#dc2626"; }
+            setTimeout(() => { btn.innerText = "📲 ส่งการ์ดโปรแกรมเข้า LINE"; btn.style.background = "#0284c7"; btn.disabled = false; btn.style.opacity = "1"; }, 5000);
+        }).catch(err => { btn.innerText = "❌ เชื่อมต่อไม่ได้"; btn.style.background = "#dc2626"; btn.disabled = false; btn.style.opacity = "1"; });
     }
 </script>
 </body>
