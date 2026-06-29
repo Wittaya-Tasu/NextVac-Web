@@ -151,10 +151,31 @@
 
     <div class="a4-page" id="a4Paper">
         <div class="a4-header-text">โปรแกรมวัคซีน : <span id="lblProgName"></span></div>
-        <table class="info-table">
-            <tr><td width="50%"><strong>ชื่อฟาร์ม:</strong> <span id="lblFarm"></span></td><td width="50%"><strong>ภาค:</strong> <span id="lblRegion"></span></td></tr>
-            <tr><td><strong>ชื่อโรงเรือน:</strong> <span id="lblHouse"></span></td><td><strong>ประเภทสุกร:</strong> <span id="lblType"></span></td></tr>
-            <tr><td><strong>จำนวน(ตัว)ทั้งหมด:</strong> <span id="lblQty"></span> ตัว</td><td><strong>วันที่รับเข้า:</strong> <span id="lblDate"></span> &nbsp;&nbsp;&nbsp; <strong>อายุรับเข้า:</strong> <span id="lblAge"></span> สัปดาห์</td></tr>
+        <table class="info-table" style="border-collapse: collapse; line-height: 1.8; margin-bottom: 25px;">
+            <tr>
+                <td width="15%" style="text-align: right; padding-right: 10px;"><strong>ชื่อฟาร์ม :</strong></td>
+                <td width="35%"><span id="lblFarm"></span></td>
+                <td width="15%" style="text-align: right; padding-right: 10px;"><strong>ภาค :</strong></td>
+                <td width="35%"><span id="lblRegion"></span></td>
+            </tr>
+            <tr>
+                <td style="text-align: right; padding-right: 10px;"><strong>ชื่อโรงเรือน :</strong></td>
+                <td><span id="lblHouse"></span></td>
+                <td style="text-align: right; padding-right: 10px;"><strong>ประเภทสุกร :</strong></td>
+                <td><span id="lblType"></span></td>
+            </tr>
+            <tr>
+                <td style="text-align: right; padding-right: 10px;"><strong>จำนวน(ตัว) :</strong></td>
+                <td><span id="lblQty"></span> ตัว</td>
+                <td style="text-align: right; padding-right: 10px;"><strong>วันที่รับเข้า :</strong></td>
+                <td><span id="lblDate"></span></td>
+            </tr>
+            <tr>
+                <td style="text-align: right; padding-right: 10px;"><strong>อายุรับเข้า :</strong></td>
+                <td><span id="lblAge"></span> สัปดาห์</td>
+                <td></td>
+                <td></td>
+            </tr>
         </table>
 
         <table class="vaccine-table">
@@ -360,12 +381,13 @@
         return d.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
     }
 
-    function getFullThaiDate(dateStr) {
+    ffunction getShortThaiDate(dateStr) {
         const d = new Date(dateStr);
         const days = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
-        const months = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
-        return `วัน${days[d.getDay()]} ที่ ${d.getDate()} ${months[d.getMonth()]} พ.ศ.${d.getFullYear() + 543}`;
-    }
+        // ใช้ชื่อเดือนแบบย่อ
+        const shortMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+        return `วัน${days[d.getDay()]}ที่ ${d.getDate()} ${shortMonths[d.getMonth()]} ${d.getFullYear() + 543}`;
+        }
 
     function closeA4() {
         document.getElementById('a4Section').style.display = 'none';
