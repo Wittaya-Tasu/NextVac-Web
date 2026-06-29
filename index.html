@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>.[NextVac: Smart Vaccine Program By SVS]</title>
+    <title>[NextVac By SVS]</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
     
     <style>
@@ -127,7 +127,10 @@
             <select id="programSelect" required><option value="">-- เลือกประเภทสุกรก่อน --</option></select>
 
             <div style="background:#f8fafc; padding:15px; border-radius:8px; margin-top:20px; border:1px solid #e2e8f0;">
-                <label style="margin-top:0;">วันที่รับเข้า</label>
+                <label style="margin-top:0;">ชื่อโรงเรือน</label>
+                <input type="text" id="houseName" placeholder="เช่น โรงเรือน 1 / เล้าขุน 4" required>
+
+                <label>วันที่รับเข้า</label>
                 <input type="date" id="admissionDate" required>
                 <label>สุกรทั้งหมด (ตัว)</label>
                 <input type="number" id="totalQty" required>
@@ -150,10 +153,8 @@
         <div class="a4-header-text">โปรแกรมวัคซีน : <span id="lblProgName"></span></div>
         <table class="info-table">
             <tr><td width="50%"><strong>ชื่อฟาร์ม:</strong> <span id="lblFarm"></span></td><td width="50%"><strong>ภาค:</strong> <span id="lblRegion"></span></td></tr>
-            <tr><td><strong>ประเภทสุกร:</strong> <span id="lblType"></span></td><td><strong>จำนวน(ตัว)ทั้งหมด:</strong> <span id="lblQty"></span> ตัว</td></tr>
-            <tr>
-                <td colspan="2"><strong>วันที่รับเข้า:</strong> <span id="lblDate"></span> &nbsp;&nbsp;&nbsp; <strong>อายุรับเข้า:</strong> <span id="lblAge"></span> สัปดาห์</td>
-            </tr>
+            <tr><td><strong>ชื่อโรงเรือน:</strong> <span id="lblHouse"></span></td><td><strong>ประเภทสุกร:</strong> <span id="lblType"></span></td></tr>
+            <tr><td><strong>จำนวน(ตัว)ทั้งหมด:</strong> <span id="lblQty"></span> ตัว</td><td><strong>วันที่รับเข้า:</strong> <span id="lblDate"></span> &nbsp;&nbsp;&nbsp; <strong>อายุรับเข้า:</strong> <span id="lblAge"></span> สัปดาห์</td></tr>
         </table>
 
         <table class="vaccine-table">
@@ -380,6 +381,7 @@
         const progSelect = document.getElementById('programSelect');
         const progId = progSelect.value;
         const progName = progSelect.options[progSelect.selectedIndex].text;
+        const houseName = document.getElementById('houseName').value;
         const admDate = document.getElementById('admissionDate').value;
         const qty = document.getElementById('totalQty').value;
         const initialAge = parseInt(document.getElementById('pigAge').value);
@@ -387,6 +389,7 @@
         document.getElementById('lblProgName').innerText = progName;
         document.getElementById('lblFarm').innerText = farm;
         document.getElementById('lblRegion').innerText = region;
+        document.getElementById('lblHouse').innerText = houseName;
         document.getElementById('lblType').innerText = typeText;
         document.getElementById('lblQty').innerText = qty;
         document.getElementById('lblDate').innerText = getFullThaiDate(admDate);
@@ -399,7 +402,7 @@
         const baseDateObj = new Date(admDate);
         const batchId = `B-${new Date().getFullYear()}${String(new Date().getMonth()+1).padStart(2,'0')}${String(new Date().getDate()).padStart(2,'0')}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-        currentSchedulePayload = { farmName: farm, summaryInfo: { type: typeText, qty: qty, admDate: formatDateThai(admDate), batchId: batchId }, scheduleData: [] };
+        currentSchedulePayload = { farmName: farm, summaryInfo: { type: typeText, qty: qty, admDate: formatDateThai(admDate), batchId: batchId, houseName: houseName }, scheduleData: [] };
 
         const firstRowDateDisplay = formatDateThai(baseDateObj);
         let lastDate = firstRowDateDisplay; 
@@ -407,7 +410,7 @@
 
         const trInitial = document.createElement('tr');
         trInitial.style.backgroundColor = "#f8fafc"; 
-        trInitial.innerHTML = `<td>${firstRowDateDisplay}</td><td>${initialAge}</td><td>-</td><td>-</td><td class="note-col"><strong>รับเข้าสุกร</strong></td><td></td>`;
+        trInitial.innerHTML = `<td>${firstRowDateDisplay}</td><td>${initialAge}</td><td>-</td><td>-</td><td class="note-col"><strong>รับเข้าสุกร (โรงเรือน: ${houseName})</strong></td><td></td>`;
         tbody.appendChild(trInitial);
 
         const progRows = masterData.programs.filter(p => p.id === progId).sort((a, b) => a.offset - b.offset);
@@ -431,13 +434,13 @@
             lastDate = dateDisplay;
         });
 
-        // ⚡️ ส่งข้อมูลไปให้สมองกลบันทึกทั้ง Queue_Tasks และ Batch_Master
+        // ⚡️ ส่งข้อมูลไปให้สมองกลบันทึกพร้อมแนบข้อมูลชื่อโรงเรือน (houseName) ไปด้วย
         fetch(SCRIPT_URL, { 
             method: 'POST', 
             body: JSON.stringify({ 
                 action: "saveTasks", 
                 batchInfo: {
-                    batchId: batchId, farmName: farm, region: region, type: typeText, qty: qty, admDate: admDate, vetName: farmOpt.dataset.vet
+                    batchId: batchId, farmName: farm, region: region, type: typeText, qty: qty, admDate: admDate, vetName: farmOpt.dataset.vet, houseName: houseName
                 },
                 tasks: tasksToSave 
             }) 
@@ -446,7 +449,7 @@
         const today = new Date();
         document.getElementById('lblPrintDate').innerText = formatDateThai(today) + " " + today.toLocaleTimeString('th-TH');
         document.getElementById('lblRefId').innerText = `REF-${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}-${Math.floor(1000 + Math.random() * 9000)}`;
-        document.title = `${farm}_${typeText}_${progName}_${formatDateThai(admDate).replace(/\//g,'-')}`;
+        document.title = `${farm}_${houseName}_${typeText}_${progName}_${formatDateThai(admDate).replace(/\//g,'-')}`;
         document.getElementById('appWrapper').style.display = 'none';
         document.getElementById('a4Section').style.display = 'flex';
     }
