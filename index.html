@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>.[NextVac By SVS].</title>
+    <title>[NextVac By SVS]</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
     
     <style>
@@ -19,14 +19,14 @@
 
         body { font-family: 'Sarabun', sans-serif; background-color: #f1f5f9; padding: 20px; color: #1e293b; margin: 0; }
         .container { max-width: 600px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin-bottom: 20px;}
-        .dashboard-container { max-width: 900px; } /* ขยายความกว้างสำหรับแดชบอร์ด */
+        .dashboard-container { max-width: 900px; } 
         h2 { color: #0369a1; text-align: center; margin-top: 0; font-weight: 700; }
         label { font-weight: 600; display: block; margin-top: 15px; font-size: 16px; }
         select, input { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-family: 'Sarabun', sans-serif; font-size: 16px; }
         button.btn-primary { width: 100%; padding: 15px; background: #0284c7; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 18px; margin-top: 25px; cursor: pointer; font-family: 'Sarabun', sans-serif;}
         button.btn-print { padding: 10px 20px; background: #16a34a; color: white; border: none; border-radius: 8px; cursor: pointer; font-family: 'Sarabun', sans-serif; font-size: 16px; font-weight: bold;}
         
-        /* เมนู Tabs สำหรับ Vet & Admin */
+        /* เมนู Tabs */
         .tab-menu { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
         .tab-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-family: 'Sarabun'; font-weight: bold; font-size: 16px; transition: 0.3s; min-width: 150px; }
         .tab-active { background: #0369a1; color: white; }
@@ -105,7 +105,32 @@
             </div>
         </div>
 
-        <button class="btn-primary" onclick="loadDashboardData()" style="margin-top: 0; margin-bottom: 15px; padding: 10px; font-size: 16px; width: auto; min-width: 150px;">🔄 รีเฟรชข้อมูล</button>
+        <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <div style="flex: 1; min-width: 150px;">
+                <label style="margin-top: 0; font-size: 14px; color: #475569;">กรองตามฟาร์ม:</label>
+                <select id="filterFarm" onchange="applyDashboardFilters()" style="padding: 8px; margin-top: 5px;">
+                    <option value="">-- ทุกฟาร์ม --</option>
+                </select>
+            </div>
+            <div style="flex: 1; min-width: 150px;">
+                <label style="margin-top: 0; font-size: 14px; color: #475569;">กรองตามประเภทสุกร:</label>
+                <select id="filterType" onchange="applyDashboardFilters()" style="padding: 8px; margin-top: 5px;">
+                    <option value="">-- ทุกประเภทสุกร --</option>
+                </select>
+            </div>
+            <div style="flex: 1; min-width: 150px;">
+                <label style="margin-top: 0; font-size: 14px; color: #475569;">กรองตามสถานะ:</label>
+                <select id="filterStatus" onchange="applyDashboardFilters()" style="padding: 8px; margin-top: 5px;">
+                    <option value="">-- ทุกสถานะ --</option>
+                    <option value="In Progress">กำลังดำเนินการ (รอคิว)</option>
+                    <option value="Overdue">ล่าช้า! (Overdue)</option>
+                    <option value="Completed">เสร็จสิ้น 100%</option>
+                </select>
+            </div>
+            <div style="display: flex; align-items: flex-end;">
+                <button onclick="loadDashboardData()" style="padding: 8px 15px; background: #0ea5e9; color: white; border: none; border-radius: 8px; font-family: 'Sarabun'; cursor: pointer; font-weight: bold; height: 42px;">🔄 โหลดข้อมูลใหม่</button>
+            </div>
+        </div>
 
         <div style="overflow-x: auto;">
             <table style="width: 100%; border-collapse: collapse; font-size: 14px; min-width: 700px;">
@@ -119,7 +144,7 @@
                     </tr>
                 </thead>
                 <tbody id="dashboardTableBody">
-                    <tr><td colspan="5" style="text-align: center; padding: 20px;">คลิกปุ่มรีเฟรชเพื่อโหลดข้อมูล...</td></tr>
+                    <tr><td colspan="5" style="text-align: center; padding: 20px;">คลิกปุ่มโหลดข้อมูลใหม่...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -265,6 +290,7 @@
     let masterData = { regions: {}, programs: [] };
     let currentUser = null; 
     let currentSchedulePayload = null; 
+    let currentDashboardData = []; // 💡 ตัวแปรใหม่สำหรับเก็บข้อมูล Dashboard เพื่อใช้ทำ Filter
 
     window.onload = async () => {
         try {
@@ -351,13 +377,9 @@
             switchTab('dashboard');
 
         } else if (currentUser.role === "Admin") {
-            // 💡 อัปเดตสิทธิ์สำหรับ Admin: เปิดให้เห็นเมนู Tabs ทุกอย่าง
             document.getElementById('vetTabs').style.display = 'flex';
-
-            // 💡 Admin เห็นข้อมูลภาคทั้งหมด ทั่วประเทศ
             Object.keys(masterData.regions).forEach(reg => regSelect.add(new Option(reg, reg)));
             
-            // 💡 Admin สามารถจัดการรหัสผ่านฟาร์ม / LINE ได้ทุกฟาร์มทั่วประเทศ
             const mngSelect = document.getElementById('manageFarmSelect');
             mngSelect.innerHTML = '<option value="">-- เลือกฟาร์มที่ต้องการจัดการ --</option>';
             Object.keys(masterData.regions).forEach(reg => {
@@ -366,7 +388,6 @@
                 });
             });
 
-            // 💡 เข้าสู่หน้า Dashboard เป็นหน้าแรกทันที
             switchTab('dashboard');
         }
     }
@@ -383,7 +404,7 @@
         if(tabName === 'dashboard') loadDashboardData();
     }
 
-    // ================= DASHBOARD LOGIC =================
+    // ================= DASHBOARD LOGIC (พร้อมระบบ Filter) =================
     function loadDashboardData() {
         const tbody = document.getElementById('dashboardTableBody');
         tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">⏳ กำลังโหลดข้อมูล...</td></tr>';
@@ -392,7 +413,9 @@
         .then(res => res.json())
         .then(data => {
             if(data.status === "success") {
-                renderDashboard(data.data);
+                currentDashboardData = data.data; // 💡 เก็บข้อมูลไว้ในตัวแปร
+                populateDashboardFilters(); // 💡 สร้างตัวเลือก Dropdown
+                applyDashboardFilters(); // 💡 สั่งแสดงผลข้อมูลที่กรองแล้ว
             } else {
                 tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: red;">❌ ${data.message}</td></tr>`;
             }
@@ -402,6 +425,51 @@
         });
     }
 
+    // 💡 ฟังก์ชันใหม่: ดึงรายชื่อฟาร์มและสุกรมาใส่ใน Dropdown
+    function populateDashboardFilters() {
+        const filterFarm = document.getElementById('filterFarm');
+        const filterType = document.getElementById('filterType');
+        
+        filterFarm.innerHTML = '<option value="">-- ทุกฟาร์ม --</option>';
+        filterType.innerHTML = '<option value="">-- ทุกประเภทสุกร --</option>';
+        
+        const farms = new Set();
+        const types = new Set();
+        
+        currentDashboardData.forEach(item => {
+            // ถอดสิทธิ์การมองเห็น (Admin เห็นหมด / Vet เห็นแค่ของตัวเอง)
+            if (currentUser.role === "Vet" && item.vetName !== currentUser.vetName) return;
+            farms.add(item.farmName);
+            types.add(item.swineType);
+        });
+        
+        // เรียงลำดับตัวอักษรและนำไปใส่ใน Dropdown
+        Array.from(farms).sort().forEach(f => filterFarm.add(new Option(f, f)));
+        Array.from(types).sort().forEach(t => filterType.add(new Option(t, t)));
+    }
+
+    // 💡 ฟังก์ชันใหม่: กรองข้อมูลตามที่เลือก
+    function applyDashboardFilters() {
+        const farmVal = document.getElementById('filterFarm').value;
+        const typeVal = document.getElementById('filterType').value;
+        const statusVal = document.getElementById('filterStatus').value;
+
+        const filteredItems = currentDashboardData.filter(item => {
+            // เช็กสิทธิ์การมองเห็นก่อน
+            if (currentUser.role === "Vet" && item.vetName !== currentUser.vetName) return false;
+            
+            // เช็กเงื่อนไข Filter (ถ้าเลือก "ทั้งหมด" ให้ผ่าน / ถ้าเลือกเฉพาะ ให้ตรงกับที่เลือก)
+            let matchFarm = farmVal === "" || item.farmName === farmVal;
+            let matchType = typeVal === "" || item.swineType === typeVal;
+            let matchStatus = statusVal === "" || item.status === statusVal;
+
+            return matchFarm && matchType && matchStatus;
+        });
+
+        // ส่งข้อมูลที่กรองแล้วไปวาดตารางและคำนวณ KPI ใหม่
+        renderDashboard(filteredItems);
+    }
+
     function renderDashboard(items) {
         const tbody = document.getElementById('dashboardTableBody');
         tbody.innerHTML = '';
@@ -409,14 +477,17 @@
         let countTotal = 0, countCompleted = 0, countOverdue = 0;
 
         if(items.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">ไม่พบข้อมูลโปรแกรมวัคซีน</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>';
+            
+            // อัปเดตตัวเลข KPI เป็น 0
+            document.getElementById('kpiTotal').innerText = 0;
+            document.getElementById('kpiCompleted').innerText = 0;
+            document.getElementById('kpiOverdue').innerText = 0;
             return;
         }
 
         items.forEach(item => {
-            // 💡 ถ้าเป็นสัตวแพทย์ (Vet) จะกรองเห็นเฉพาะของตัวเอง แต่ถ้าเป็น Admin บรรทัดนี้จะปล่อยผ่านให้เห็นทั้งหมด!
-            if(currentUser.role === "Vet" && item.vetName !== currentUser.vetName) return;
-            
+            // 💡 นำระบบกรองสิทธิ์ตรงนี้ออกไปไว้ใน applyDashboardFilters แทนแล้วครับ เพื่อให้ KPI คำนวณถูกต้อง
             countTotal++;
             if(item.status === "Completed") countCompleted++;
             if(item.status === "Overdue") countOverdue++;
@@ -443,6 +514,7 @@
             tbody.appendChild(tr);
         });
 
+        // อัปเดตตัวเลข KPI ตามข้อมูลที่ถูกฟิลเตอร์
         document.getElementById('kpiTotal').innerText = countTotal;
         document.getElementById('kpiCompleted').innerText = countCompleted;
         document.getElementById('kpiOverdue').innerText = countOverdue;
@@ -484,7 +556,6 @@
         farmSelect.innerHTML = '<option value="">-- เลือกฟาร์ม --</option>';
         if (region && masterData.regions[region]) {
             masterData.regions[region].forEach(f => {
-                // 💡 ถ้าเป็น Admin สามารถเลือกดู/ออกโปรแกรมได้ทุกฟาร์ม
                 if (currentUser.role === "Vet" && f.vet !== currentUser.vetName) return; 
                 let opt = new Option(f.name, f.name);
                 opt.dataset.vet = f.vet;
