@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>[NextVac By SVS]</title>
+    <title>.[NextVac By SVS]</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
     
     <style>
@@ -381,13 +381,14 @@
         return d.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
     }
 
-    ffunction getShortThaiDate(dateStr) {
+    // แก้ไขคำว่า ffunction ให้ถูกต้องแล้วครับ
+    function getShortThaiDate(dateStr) {
         const d = new Date(dateStr);
         const days = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
         // ใช้ชื่อเดือนแบบย่อ
         const shortMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
         return `วัน${days[d.getDay()]}ที่ ${d.getDate()} ${shortMonths[d.getMonth()]} ${d.getFullYear() + 543}`;
-        }
+    }
 
     function closeA4() {
         document.getElementById('a4Section').style.display = 'none';
@@ -414,7 +415,10 @@
         document.getElementById('lblHouse').innerText = houseName;
         document.getElementById('lblType').innerText = typeText;
         document.getElementById('lblQty').innerText = qty;
-        document.getElementById('lblDate').innerText = getFullThaiDate(admDate);
+        
+        // แก้ไขให้เรียกใช้ getShortThaiDate แทน getFullThaiDate แล้วครับ
+        document.getElementById('lblDate').innerText = getShortThaiDate(admDate); 
+        
         document.getElementById('lblAge').innerText = initialAge;
         document.getElementById('lblVetName').innerText = farmOpt.dataset.vet || "น.สพ. วิทยา ทะสุยะ";
         document.getElementById('lblManagerName').innerText = farmOpt.dataset.manager || "......................................................";
