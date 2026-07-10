@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>[NextVac By SVS]</title>
+    <title>.[NextVac By SVS].</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
     
     <style>
@@ -26,7 +26,7 @@
         button.btn-primary { width: 100%; padding: 15px; background: #0284c7; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 18px; margin-top: 25px; cursor: pointer; font-family: 'Sarabun', sans-serif;}
         button.btn-print { padding: 10px 20px; background: #16a34a; color: white; border: none; border-radius: 8px; cursor: pointer; font-family: 'Sarabun', sans-serif; font-size: 16px; font-weight: bold;}
         
-        /* เมนู Tabs สำหรับ Vet */
+        /* เมนู Tabs สำหรับ Vet & Admin */
         .tab-menu { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
         .tab-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-family: 'Sarabun'; font-weight: bold; font-size: 16px; transition: 0.3s; min-width: 150px; }
         .tab-active { background: #0369a1; color: white; }
@@ -124,6 +124,7 @@
             </table>
         </div>
     </div>
+    
     <div class="container" id="manageSection" style="display:none; background:#f8fafc; border:2px solid #cbd5e1;">
         <h2 style="color:#0f172a;">🛠️ ตั้งค่าข้อมูลฟาร์ม</h2>
         <p style="text-align:center; color:#64748b; margin-top:-10px;">(สำหรับเปลี่ยนรหัสเข้าใช้งาน หรือผูกกลุ่ม LINE ให้ฟาร์ม)</p>
@@ -347,12 +348,26 @@
                 });
             });
             
-            // เปิดให้สัตวแพทย์เห็นหน้าแดชบอร์ดเป็นหน้าแรกทันที
             switchTab('dashboard');
 
         } else if (currentUser.role === "Admin") {
+            // 💡 อัปเดตสิทธิ์สำหรับ Admin: เปิดให้เห็นเมนู Tabs ทุกอย่าง
+            document.getElementById('vetTabs').style.display = 'flex';
+
+            // 💡 Admin เห็นข้อมูลภาคทั้งหมด ทั่วประเทศ
             Object.keys(masterData.regions).forEach(reg => regSelect.add(new Option(reg, reg)));
-            document.getElementById('formSection').style.display = 'block';
+            
+            // 💡 Admin สามารถจัดการรหัสผ่านฟาร์ม / LINE ได้ทุกฟาร์มทั่วประเทศ
+            const mngSelect = document.getElementById('manageFarmSelect');
+            mngSelect.innerHTML = '<option value="">-- เลือกฟาร์มที่ต้องการจัดการ --</option>';
+            Object.keys(masterData.regions).forEach(reg => {
+                masterData.regions[reg].forEach(f => {
+                    mngSelect.add(new Option(f.name, f.name));
+                });
+            });
+
+            // 💡 เข้าสู่หน้า Dashboard เป็นหน้าแรกทันที
+            switchTab('dashboard');
         }
     }
 
@@ -399,6 +414,7 @@
         }
 
         items.forEach(item => {
+            // 💡 ถ้าเป็นสัตวแพทย์ (Vet) จะกรองเห็นเฉพาะของตัวเอง แต่ถ้าเป็น Admin บรรทัดนี้จะปล่อยผ่านให้เห็นทั้งหมด!
             if(currentUser.role === "Vet" && item.vetName !== currentUser.vetName) return;
             
             countTotal++;
@@ -468,6 +484,7 @@
         farmSelect.innerHTML = '<option value="">-- เลือกฟาร์ม --</option>';
         if (region && masterData.regions[region]) {
             masterData.regions[region].forEach(f => {
+                // 💡 ถ้าเป็น Admin สามารถเลือกดู/ออกโปรแกรมได้ทุกฟาร์ม
                 if (currentUser.role === "Vet" && f.vet !== currentUser.vetName) return; 
                 let opt = new Option(f.name, f.name);
                 opt.dataset.vet = f.vet;
