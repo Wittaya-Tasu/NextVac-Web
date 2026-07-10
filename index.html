@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>.[NextVac By SVS]</title>
+    <title>[NextVac By SVS]</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
     
     <style>
@@ -19,6 +19,7 @@
 
         body { font-family: 'Sarabun', sans-serif; background-color: #f1f5f9; padding: 20px; color: #1e293b; margin: 0; }
         .container { max-width: 600px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin-bottom: 20px;}
+        .dashboard-container { max-width: 900px; } /* ขยายความกว้างสำหรับแดชบอร์ด */
         h2 { color: #0369a1; text-align: center; margin-top: 0; font-weight: 700; }
         label { font-weight: 600; display: block; margin-top: 15px; font-size: 16px; }
         select, input { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-family: 'Sarabun', sans-serif; font-size: 16px; }
@@ -26,8 +27,8 @@
         button.btn-print { padding: 10px 20px; background: #16a34a; color: white; border: none; border-radius: 8px; cursor: pointer; font-family: 'Sarabun', sans-serif; font-size: 16px; font-weight: bold;}
         
         /* เมนู Tabs สำหรับ Vet */
-        .tab-menu { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
-        .tab-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-family: 'Sarabun'; font-weight: bold; font-size: 16px; transition: 0.3s; }
+        .tab-menu { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
+        .tab-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-family: 'Sarabun'; font-weight: bold; font-size: 16px; transition: 0.3s; min-width: 150px; }
         .tab-active { background: #0369a1; color: white; }
         .tab-inactive { background: #e2e8f0; color: #475569; }
 
@@ -75,16 +76,54 @@
 
 <div id="appWrapper" style="display:none;" class="no-print">
     
-    <div class="top-bar container">
+    <div class="top-bar container dashboard-container">
         <span class="user-info" id="welcomeText">👤 ผู้ใช้งาน: </span>
         <button class="btn-logout" onclick="location.reload()">🚪 ออกจากระบบ</button>
     </div>
 
-    <div class="tab-menu container" id="vetTabs" style="display:none; padding:10px; background:transparent; box-shadow:none;">
-        <button id="btnTabCreate" class="tab-btn tab-active" onclick="switchTab('create')">สร้างโปรแกรมวัคซีน</button>
-        <button id="btnTabManage" class="tab-btn tab-inactive" onclick="switchTab('manage')">จัดการรหัสผ่าน / LINE ฟาร์ม</button>
+    <div class="tab-menu container dashboard-container" id="vetTabs" style="display:none; padding:10px; background:transparent; box-shadow:none;">
+        <button id="btnTabDashboard" class="tab-btn tab-active" onclick="switchTab('dashboard')">📊 แดชบอร์ดภาพรวม</button>
+        <button id="btnTabCreate" class="tab-btn tab-inactive" onclick="switchTab('create')">สร้างโปรแกรมวัคซีน</button>
+        <button id="btnTabManage" class="tab-btn tab-inactive" onclick="switchTab('manage')">จัดการรหัสผ่าน / LINE</button>
     </div>
 
+    <div class="container dashboard-container" id="dashboardSection" style="display:none;">
+        <h2>📊 แดชบอร์ดติดตามความคืบหน้า (Real-time)</h2>
+        
+        <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 200px; background: #e0f2fe; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #bae6fd;">
+                <div style="color: #0369a1; font-weight: bold; font-size: 14px;">จำนวนรุ่นสุกรทั้งหมด</div>
+                <div id="kpiTotal" style="font-size: 28px; font-weight: bold; color: #0284c7;">0</div>
+            </div>
+            <div style="flex: 1; min-width: 200px; background: #dcfce7; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #bbf7d0;">
+                <div style="color: #166534; font-weight: bold; font-size: 14px;">ดำเนินการเสร็จสิ้น (100%)</div>
+                <div id="kpiCompleted" style="font-size: 28px; font-weight: bold; color: #15803d;">0</div>
+            </div>
+            <div style="flex: 1; min-width: 200px; background: #fee2e2; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #fecaca;">
+                <div style="color: #991b1b; font-weight: bold; font-size: 14px;">พบวัคซีนล่าช้า (Overdue)</div>
+                <div id="kpiOverdue" style="font-size: 28px; font-weight: bold; color: #b91c1c;">0</div>
+            </div>
+        </div>
+
+        <button class="btn-primary" onclick="loadDashboardData()" style="margin-top: 0; margin-bottom: 15px; padding: 10px; font-size: 16px; width: auto; min-width: 150px;">🔄 รีเฟรชข้อมูล</button>
+
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 14px; min-width: 700px;">
+                <thead>
+                    <tr style="background: #0f172a; color: white; text-align: left;">
+                        <th style="padding: 10px;">Batch ID / วันที่รับเข้า</th>
+                        <th style="padding: 10px;">ฟาร์ม / โรงเรือน</th>
+                        <th style="padding: 10px;">ประเภทสุกร</th>
+                        <th style="padding: 10px; text-align: center;">ความคืบหน้า</th>
+                        <th style="padding: 10px; text-align: center;">สถานะ</th>
+                    </tr>
+                </thead>
+                <tbody id="dashboardTableBody">
+                    <tr><td colspan="5" style="text-align: center; padding: 20px;">คลิกปุ่มรีเฟรชเพื่อโหลดข้อมูล...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
     <div class="container" id="manageSection" style="display:none; background:#f8fafc; border:2px solid #cbd5e1;">
         <h2 style="color:#0f172a;">🛠️ ตั้งค่าข้อมูลฟาร์ม</h2>
         <p style="text-align:center; color:#64748b; margin-top:-10px;">(สำหรับเปลี่ยนรหัสเข้าใช้งาน หรือผูกกลุ่ม LINE ให้ฟาร์ม)</p>
@@ -104,7 +143,7 @@
         <button id="btnUpdateFarm" class="btn-primary" style="background:#0f172a;" onclick="updateFarmData()">💾 บันทึกข้อมูลฟาร์ม</button>
     </div>
 
-    <div class="container" id="formSection">
+    <div class="container" id="formSection" style="display:none;">
         <h2>สร้างโปรแกรมวัคซีน</h2>
         <form onsubmit="generateA4(event)">
             <label>เลือกภาค</label>
@@ -288,6 +327,7 @@
             farmSelect.options[0].dataset.vet = currentUser.vetName;
             farmSelect.options[0].dataset.manager = currentUser.managerName;
             farmSelect.disabled = true;
+            document.getElementById('formSection').style.display = 'block';
             updatePrograms(); 
 
         } else if (currentUser.role === "Vet") {
@@ -306,18 +346,92 @@
                     if (f.vet === currentUser.vetName) mngSelect.add(new Option(f.name, f.name));
                 });
             });
+            
+            // เปิดให้สัตวแพทย์เห็นหน้าแดชบอร์ดเป็นหน้าแรกทันที
+            switchTab('dashboard');
 
         } else if (currentUser.role === "Admin") {
             Object.keys(masterData.regions).forEach(reg => regSelect.add(new Option(reg, reg)));
+            document.getElementById('formSection').style.display = 'block';
         }
     }
 
     function switchTab(tabName) {
+        document.getElementById('btnTabDashboard').className = tabName === 'dashboard' ? "tab-btn tab-active" : "tab-btn tab-inactive";
         document.getElementById('btnTabCreate').className = tabName === 'create' ? "tab-btn tab-active" : "tab-btn tab-inactive";
         document.getElementById('btnTabManage').className = tabName === 'manage' ? "tab-btn tab-active" : "tab-btn tab-inactive";
+        
+        document.getElementById('dashboardSection').style.display = tabName === 'dashboard' ? "block" : "none";
         document.getElementById('formSection').style.display = tabName === 'create' ? "block" : "none";
         document.getElementById('manageSection').style.display = tabName === 'manage' ? "block" : "none";
+
+        if(tabName === 'dashboard') loadDashboardData();
     }
+
+    // ================= DASHBOARD LOGIC =================
+    function loadDashboardData() {
+        const tbody = document.getElementById('dashboardTableBody');
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">⏳ กำลังโหลดข้อมูล...</td></tr>';
+        
+        fetch(SCRIPT_URL + "?action=getDashboardData")
+        .then(res => res.json())
+        .then(data => {
+            if(data.status === "success") {
+                renderDashboard(data.data);
+            } else {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: red;">❌ ${data.message}</td></tr>`;
+            }
+        })
+        .catch(err => {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: red;">❌ เชื่อมต่อเซิร์ฟเวอร์ไม่ได้</td></tr>';
+        });
+    }
+
+    function renderDashboard(items) {
+        const tbody = document.getElementById('dashboardTableBody');
+        tbody.innerHTML = '';
+        
+        let countTotal = 0, countCompleted = 0, countOverdue = 0;
+
+        if(items.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">ไม่พบข้อมูลโปรแกรมวัคซีน</td></tr>';
+            return;
+        }
+
+        items.forEach(item => {
+            if(currentUser.role === "Vet" && item.vetName !== currentUser.vetName) return;
+            
+            countTotal++;
+            if(item.status === "Completed") countCompleted++;
+            if(item.status === "Overdue") countOverdue++;
+
+            let statusBadge = "";
+            if(item.status === "Completed") statusBadge = '<span style="background:#16a34a; color:white; padding:4px 8px; border-radius:4px; font-size:12px;">เสร็จสิ้น</span>';
+            else if(item.status === "Overdue") statusBadge = '<span style="background:#dc2626; color:white; padding:4px 8px; border-radius:4px; font-size:12px;">ล่าช้า!</span>';
+            else statusBadge = '<span style="background:#0284c7; color:white; padding:4px 8px; border-radius:4px; font-size:12px;">กำลังดำเนินการ</span>';
+
+            const tr = document.createElement('tr');
+            tr.style.borderBottom = "1px solid #e2e8f0";
+            tr.innerHTML = `
+                <td style="padding: 10px;"><strong>${item.batchId}</strong><br><span style="color:#64748b; font-size:12px;">รับเข้า: ${formatDateThai(item.admDate)}</span></td>
+                <td style="padding: 10px;">${item.farmName}<br><span style="color:#64748b; font-size:12px;">${item.houseName}</span></td>
+                <td style="padding: 10px;">${item.swineType}<br><span style="color:#64748b; font-size:12px;">${item.qty} ตัว</span></td>
+                <td style="padding: 10px; text-align: center;">
+                    <div style="background:#e2e8f0; border-radius:10px; width:100%; height:8px; margin-bottom:5px; overflow:hidden;">
+                        <div style="background:${item.status === 'Overdue' ? '#dc2626' : '#16a34a'}; width:${item.progress}%; height:100%;"></div>
+                    </div>
+                    <span style="font-weight:bold;">${item.progress}%</span> <span style="font-size:11px; color:#64748b;">(${item.doneTasks}/${item.totalTasks})</span>
+                </td>
+                <td style="padding: 10px; text-align: center;">${statusBadge}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        document.getElementById('kpiTotal').innerText = countTotal;
+        document.getElementById('kpiCompleted').innerText = countCompleted;
+        document.getElementById('kpiOverdue').innerText = countOverdue;
+    }
+    // ===================================================
 
     function updateFarmData() {
         const farm = document.getElementById('manageFarmSelect').value;
@@ -381,11 +495,9 @@
         return d.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
     }
 
-    // แก้ไขคำว่า ffunction ให้ถูกต้องแล้วครับ
     function getShortThaiDate(dateStr) {
         const d = new Date(dateStr);
         const days = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
-        // ใช้ชื่อเดือนแบบย่อ
         const shortMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
         return `วัน${days[d.getDay()]}ที่ ${d.getDate()} ${shortMonths[d.getMonth()]} ${d.getFullYear() + 543}`;
     }
@@ -416,7 +528,6 @@
         document.getElementById('lblType').innerText = typeText;
         document.getElementById('lblQty').innerText = qty;
         
-        // แก้ไขให้เรียกใช้ getShortThaiDate แทน getFullThaiDate แล้วครับ
         document.getElementById('lblDate').innerText = getShortThaiDate(admDate); 
         
         document.getElementById('lblAge').innerText = initialAge;
@@ -460,7 +571,6 @@
             lastDate = dateDisplay;
         });
 
-        // ⚡️ ส่งข้อมูลไปให้สมองกลบันทึกพร้อมแนบข้อมูลชื่อโรงเรือน (houseName) ไปด้วย
         fetch(SCRIPT_URL, { 
             method: 'POST', 
             body: JSON.stringify({ 
