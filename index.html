@@ -218,26 +218,26 @@
         <div class="a4-header-text">โปรแกรมวัคซีน : <span id="lblProgName"></span></div>
         <table class="info-table" style="border-collapse: collapse; line-height: 1.8; margin-bottom: 25px;">
             <tr>
-                <td width="15%" style="text-align: right; padding-right: 10px;"><strong>ชื่อฟาร์ม :</strong></td>
-                <td width="35%"><span id="lblFarm"></span></td>
-                <td width="15%" style="text-align: right; padding-right: 10px;"><strong>ภาค :</strong></td>
-                <td width="35%"><span id="lblRegion"></span></td>
+                <td width="20%" style="text-align: right; padding-right: 10px; white-space: nowrap;"><strong>ชื่อฟาร์ม :</strong></td>
+                <td width="30%" style="text-align: left;"><span id="lblFarm"></span></td>
+                <td width="20%" style="text-align: right; padding-right: 10px; white-space: nowrap;"><strong>ภาค :</strong></td>
+                <td width="30%" style="text-align: left;"><span id="lblRegion"></span></td>
             </tr>
             <tr>
-                <td style="text-align: right; padding-right: 10px;"><strong>ชื่อโรงเรือน :</strong></td>
-                <td><span id="lblHouse"></span></td>
-                <td style="text-align: right; padding-right: 10px;"><strong>ประเภทสุกร :</strong></td>
-                <td><span id="lblType"></span></td>
+                <td style="text-align: right; padding-right: 10px; white-space: nowrap;"><strong>ชื่อโรงเรือน :</strong></td>
+                <td style="text-align: left;"><span id="lblHouse"></span></td>
+                <td style="text-align: right; padding-right: 10px; white-space: nowrap;"><strong>ประเภทสุกร :</strong></td>
+                <td style="text-align: left;"><span id="lblType"></span></td>
             </tr>
             <tr>
-                <td style="text-align: right; padding-right: 10px;"><strong>จำนวน(ตัว) :</strong></td>
-                <td><span id="lblQty"></span> ตัว</td>
-                <td style="text-align: right; padding-right: 10px;"><strong>วันที่รับเข้า :</strong></td>
-                <td><span id="lblDate"></span></td>
+                <td style="text-align: right; padding-right: 10px; white-space: nowrap;"><strong>จำนวน(ตัว) :</strong></td>
+                <td style="text-align: left;"><span id="lblQty"></span> ตัว</td>
+                <td style="text-align: right; padding-right: 10px; white-space: nowrap;"><strong>วันที่รับเข้า :</strong></td>
+                <td style="text-align: left;"><span id="lblDate"></span></td>
             </tr>
             <tr>
-                <td style="text-align: right; padding-right: 10px;"><strong>อายุรับเข้า :</strong></td>
-                <td><span id="lblAge"></span> สัปดาห์</td>
+                <td style="text-align: right; padding-right: 10px; white-space: nowrap;"><strong>อายุรับเข้า :</strong></td>
+                <td style="text-align: left;"><span id="lblAge"></span> สัปดาห์</td>
                 <td></td>
                 <td></td>
             </tr>
@@ -247,7 +247,7 @@
             <thead>
                 <tr>
                     <th width="16%">กำหนดวัคซีน</th>
-                    <th width="10%">อายุ(สัปดาห์)</th>
+                    <th width="10%">อายุ(สป.)</th>
                     <th width="16%">วัคซีน</th>
                     <th width="18%">ชื่อการค้า</th>
                     <th width="24%">หมายเหตุ</th>
@@ -290,7 +290,7 @@
     let masterData = { regions: {}, programs: [] };
     let currentUser = null; 
     let currentSchedulePayload = null; 
-    let currentDashboardData = []; // 💡 ตัวแปรใหม่สำหรับเก็บข้อมูล Dashboard เพื่อใช้ทำ Filter
+    let currentDashboardData = []; 
 
     window.onload = async () => {
         try {
@@ -404,7 +404,6 @@
         if(tabName === 'dashboard') loadDashboardData();
     }
 
-    // ================= DASHBOARD LOGIC (พร้อมระบบ Filter) =================
     function loadDashboardData() {
         const tbody = document.getElementById('dashboardTableBody');
         tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">⏳ กำลังโหลดข้อมูล...</td></tr>';
@@ -413,9 +412,9 @@
         .then(res => res.json())
         .then(data => {
             if(data.status === "success") {
-                currentDashboardData = data.data; // 💡 เก็บข้อมูลไว้ในตัวแปร
-                populateDashboardFilters(); // 💡 สร้างตัวเลือก Dropdown
-                applyDashboardFilters(); // 💡 สั่งแสดงผลข้อมูลที่กรองแล้ว
+                currentDashboardData = data.data; 
+                populateDashboardFilters(); 
+                applyDashboardFilters(); 
             } else {
                 tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: red;">❌ ${data.message}</td></tr>`;
             }
@@ -425,7 +424,6 @@
         });
     }
 
-    // 💡 ฟังก์ชันใหม่: ดึงรายชื่อฟาร์มและสุกรมาใส่ใน Dropdown
     function populateDashboardFilters() {
         const filterFarm = document.getElementById('filterFarm');
         const filterType = document.getElementById('filterType');
@@ -437,28 +435,23 @@
         const types = new Set();
         
         currentDashboardData.forEach(item => {
-            // ถอดสิทธิ์การมองเห็น (Admin เห็นหมด / Vet เห็นแค่ของตัวเอง)
             if (currentUser.role === "Vet" && item.vetName !== currentUser.vetName) return;
             farms.add(item.farmName);
             types.add(item.swineType);
         });
         
-        // เรียงลำดับตัวอักษรและนำไปใส่ใน Dropdown
         Array.from(farms).sort().forEach(f => filterFarm.add(new Option(f, f)));
         Array.from(types).sort().forEach(t => filterType.add(new Option(t, t)));
     }
 
-    // 💡 ฟังก์ชันใหม่: กรองข้อมูลตามที่เลือก
     function applyDashboardFilters() {
         const farmVal = document.getElementById('filterFarm').value;
         const typeVal = document.getElementById('filterType').value;
         const statusVal = document.getElementById('filterStatus').value;
 
         const filteredItems = currentDashboardData.filter(item => {
-            // เช็กสิทธิ์การมองเห็นก่อน
             if (currentUser.role === "Vet" && item.vetName !== currentUser.vetName) return false;
             
-            // เช็กเงื่อนไข Filter (ถ้าเลือก "ทั้งหมด" ให้ผ่าน / ถ้าเลือกเฉพาะ ให้ตรงกับที่เลือก)
             let matchFarm = farmVal === "" || item.farmName === farmVal;
             let matchType = typeVal === "" || item.swineType === typeVal;
             let matchStatus = statusVal === "" || item.status === statusVal;
@@ -466,7 +459,6 @@
             return matchFarm && matchType && matchStatus;
         });
 
-        // ส่งข้อมูลที่กรองแล้วไปวาดตารางและคำนวณ KPI ใหม่
         renderDashboard(filteredItems);
     }
 
@@ -479,7 +471,6 @@
         if(items.length === 0) {
             tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>';
             
-            // อัปเดตตัวเลข KPI เป็น 0
             document.getElementById('kpiTotal').innerText = 0;
             document.getElementById('kpiCompleted').innerText = 0;
             document.getElementById('kpiOverdue').innerText = 0;
@@ -487,7 +478,6 @@
         }
 
         items.forEach(item => {
-            // 💡 นำระบบกรองสิทธิ์ตรงนี้ออกไปไว้ใน applyDashboardFilters แทนแล้วครับ เพื่อให้ KPI คำนวณถูกต้อง
             countTotal++;
             if(item.status === "Completed") countCompleted++;
             if(item.status === "Overdue") countOverdue++;
@@ -514,12 +504,10 @@
             tbody.appendChild(tr);
         });
 
-        // อัปเดตตัวเลข KPI ตามข้อมูลที่ถูกฟิลเตอร์
         document.getElementById('kpiTotal').innerText = countTotal;
         document.getElementById('kpiCompleted').innerText = countCompleted;
         document.getElementById('kpiOverdue').innerText = countOverdue;
     }
-    // ===================================================
 
     function updateFarmData() {
         const farm = document.getElementById('manageFarmSelect').value;
@@ -578,9 +566,12 @@
         });
     }
 
+    // 💡 ปรับปรุงฟังก์ชันวันที่ให้เป็นรูปแบบ DD-MMM-YYYY (ตัวย่อเดือนไทย)
     function formatDateThai(dateStr) {
         const d = new Date(dateStr);
-        return d.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const shortMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${day}-${shortMonths[d.getMonth()]}-${d.getFullYear() + 543}`;
     }
 
     function getShortThaiDate(dateStr) {
