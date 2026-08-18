@@ -246,7 +246,8 @@
         <table class="vaccine-table">
             <thead>
                 <tr>
-                    <th width="16%">กำหนดวัคซีน</th>
+                    <!-- 💡 เปลี่ยนชื่อคอลัมน์เป็น "วันที่" -->
+                    <th width="16%">วันที่</th>
                     <th width="10%">อายุ(สป.)</th>
                     <th width="16%">วัคซีน</th>
                     <th width="18%">ชื่อการค้า</th>
@@ -566,12 +567,13 @@
         });
     }
 
-    // 💡 ปรับปรุงฟังก์ชันวันที่ให้เป็นรูปแบบ DD-MMM-YYYY (ตัวย่อเดือนไทย)
+    // 💡 ปรับปรุงฟังก์ชันวันที่ให้สั้นลงเป็นรูปแบบ DD/MMM/YY
     function formatDateThai(dateStr) {
         const d = new Date(dateStr);
         const shortMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
         const day = String(d.getDate()).padStart(2, '0');
-        return `${day}-${shortMonths[d.getMonth()]}-${d.getFullYear() + 543}`;
+        const yearShort = String(d.getFullYear() + 543).slice(-2); // ดึงเฉพาะ 2 ตัวท้ายของปี พ.ศ.
+        return `${day}/${shortMonths[d.getMonth()]}/${yearShort}`;
     }
 
     function getShortThaiDate(dateStr) {
@@ -626,7 +628,8 @@
 
         const trInitial = document.createElement('tr');
         trInitial.style.backgroundColor = "#f8fafc"; 
-        trInitial.innerHTML = `<td>${firstRowDateDisplay}</td><td>${initialAge}</td><td>-</td><td>-</td><td class="note-col"><strong>รับเข้าสุกร (โรงเรือน: ${houseName})</strong></td><td></td>`;
+        // 💡 ตัดข้อความชื่อโรงเรือนออก เหลือแค่ "รับเข้าสุกร"
+        trInitial.innerHTML = `<td>${firstRowDateDisplay}</td><td>${initialAge}</td><td>-</td><td>-</td><td class="note-col"><strong>รับเข้าสุกร</strong></td><td></td>`;
         tbody.appendChild(trInitial);
 
         const progRows = masterData.programs.filter(p => p.id === progId).sort((a, b) => a.offset - b.offset);
