@@ -562,12 +562,20 @@
         updatePrograms(); 
     }
 
-    function updatePrograms() {
+   function updatePrograms() {
         const type = document.getElementById('swineType').value;
         const currentFarm = document.getElementById('farmSelect').value; 
+        const currentRegion = document.getElementById('regionSelect').value; // 💡 ดึงค่า 'ภาค' มาใช้ด้วย
+        
         const progSelect = document.getElementById('programSelect');
         progSelect.innerHTML = '<option value="">-- เลือกโปรแกรม --</option>';
-        const filtered = masterData.programs.filter(p => p.type === type && (p.owner === 'Global' || p.owner === currentFarm));
+        
+        // 💡 ปรับตรรกะการกรอง: ให้ผ่านถ้าเป็น Global หรือ ชื่อตรงกับฟาร์ม หรือ ชื่อตรงกับภาค
+        const filtered = masterData.programs.filter(p => 
+            p.type === type && 
+            (p.owner === 'Global' || p.owner === currentFarm || p.owner === currentRegion)
+        );
+        
         const seenIds = new Set();
         filtered.forEach(p => {
             if (!seenIds.has(p.id)) { seenIds.add(p.id); progSelect.add(new Option(p.name, p.id)); }
