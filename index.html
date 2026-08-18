@@ -208,10 +208,16 @@
 </div>
 
 <div class="a4-wrapper" id="a4Section">
-    <div class="no-print" style="margin-bottom:20px; width:210mm; display:flex; justify-content:space-between; align-items:center;">
+    <!-- 💡 ปรับปรุงปุ่มควบคุมด้านบน A4 ให้รองรับระบบตะกร้า (Cart) -->
+    <div class="no-print" style="margin-bottom:20px; width:210mm; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
         <button style="padding:10px; cursor:pointer;" onclick="closeA4()">⬅️ ย้อนกลับ</button>
-        <button id="btnSendLine" onclick="sendScheduleToLine()" style="padding:10px 20px; background:#0284c7; color:white; border:none; border-radius:8px; cursor:pointer; font-family:'Sarabun'; font-size:16px; font-weight:bold;">📲 ส่งการ์ดโปรแกรมเข้า LINE</button>
-        <button class="btn-print" onclick="window.print()">🖨️ พิมพ์ / บันทึกเป็น PDF</button>
+        
+        <div style="display:flex; gap:10px;">
+            <button id="btnNextBatch" onclick="createNewBatch()" style="padding:10px 15px; background:#f59e0b; color:white; border:none; border-radius:8px; cursor:pointer; font-family:'Sarabun'; font-size:16px; font-weight:bold; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">➕ สร้างรุ่นต่อไป</button>
+            <button id="btnSendLine" onclick="sendScheduleToLine()" style="padding:10px 15px; background:#0284c7; color:white; border:none; border-radius:8px; cursor:pointer; font-family:'Sarabun'; font-size:16px; font-weight:bold; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">📲 ส่งการ์ดเข้า LINE</button>
+        </div>
+        
+        <button class="btn-print" onclick="window.print()">🖨️ พิมพ์ / บันทึก PDF</button>
     </div>
 
     <div class="a4-page" id="a4Paper">
@@ -246,7 +252,6 @@
         <table class="vaccine-table">
             <thead>
                 <tr>
-                    <!-- 💡 เปลี่ยนชื่อคอลัมน์เป็น "วันที่" -->
                     <th width="16%">วันที่</th>
                     <th width="10%">อายุ(สป.)</th>
                     <th width="16%">วัคซีน</th>
@@ -290,8 +295,11 @@
     
     let masterData = { regions: {}, programs: [] };
     let currentUser = null; 
-    let currentSchedulePayload = null; 
     let currentDashboardData = []; 
+    
+    // 💡 ตัวแปรระบบตะกร้าเก็บงาน (Cart)
+    let scheduleCart = []; 
+    let currentFarmForCart = "";
 
     window.onload = async () => {
         try {
@@ -471,7 +479,6 @@
 
         if(items.length === 0) {
             tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>';
-            
             document.getElementById('kpiTotal').innerText = 0;
             document.getElementById('kpiCompleted').innerText = 0;
             document.getElementById('kpiOverdue').innerText = 0;
@@ -567,12 +574,11 @@
         });
     }
 
-    // 💡 ปรับปรุงฟังก์ชันวันที่ให้สั้นลงเป็นรูปแบบ DD/MMM/YY
     function formatDateThai(dateStr) {
         const d = new Date(dateStr);
         const shortMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
         const day = String(d.getDate()).padStart(2, '0');
-        const yearShort = String(d.getFullYear() + 543).slice(-2); // ดึงเฉพาะ 2 ตัวท้ายของปี พ.ศ.
+        const yearShort = String(d.getFullYear() + 543).slice(-2);
         return `${day}/${shortMonths[d.getMonth()]}/${yearShort}`;
     }
 
@@ -588,6 +594,20 @@
         document.getElementById('appWrapper').style.display = 'block';
     }
 
+    // 💡 ฟังก์ชันสร้างรุ่นต่อไป (เคลียร์ข้อมูลเพื่อรับเล้าใหม่)
+    function createNewBatch() {
+        document.getElementById('a4Section').style.display = 'none';
+        document.getElementById('appWrapper').style.display = 'block';
+        
+        // เคลียร์เฉพาะชื่อโรงเรือนและจำนวนตัว เพื่อความรวดเร็ว
+        document.getElementById('houseName').value = '';
+        document.getElementById('totalQty').value = '';
+        
+        // เลื่อนหน้าจอขึ้นบนสุดและให้เคอร์เซอร์ไปรอที่ช่องชื่อโรงเรือน
+        window.scrollTo(0, 0);
+        document.getElementById('houseName').focus();
+    }
+
     function generateA4(e) {
         e.preventDefault();
         const farmOpt = document.getElementById('farmSelect').options[document.getElementById('farmSelect').selectedIndex];
@@ -601,6 +621,12 @@
         const admDate = document.getElementById('admissionDate').value;
         const qty = document.getElementById('totalQty').value;
         const initialAge = parseInt(document.getElementById('pigAge').value);
+
+        // 💡 ตรวจสอบตะกร้า: ถ้ามีการเปลี่ยนฟาร์มกะทันหัน ให้เคลียร์ตะกร้าทิ้ง (ป้องกันการส่งปนกัน)
+        if (currentFarmForCart !== "" && currentFarmForCart !== farm) {
+            scheduleCart = []; 
+        }
+        currentFarmForCart = farm;
 
         document.getElementById('lblProgName').innerText = progName;
         document.getElementById('lblFarm').innerText = farm;
@@ -620,15 +646,14 @@
         const baseDateObj = new Date(admDate);
         const batchId = `B-${new Date().getFullYear()}${String(new Date().getMonth()+1).padStart(2,'0')}${String(new Date().getDate()).padStart(2,'0')}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-        currentSchedulePayload = { farmName: farm, summaryInfo: { type: typeText, qty: qty, admDate: formatDateThai(admDate), batchId: batchId, houseName: houseName }, scheduleData: [] };
+        let payloadForCart = { summaryInfo: { type: typeText, qty: qty, admDate: formatDateThai(admDate), batchId: batchId, houseName: houseName }, scheduleData: [] };
 
         const firstRowDateDisplay = formatDateThai(baseDateObj);
         let lastDate = firstRowDateDisplay; 
-        currentSchedulePayload.scheduleData.push({ date: firstRowDateDisplay, age: initialAge, vac: "รับเข้าสุกร" });
+        payloadForCart.scheduleData.push({ date: firstRowDateDisplay, age: initialAge, vac: "รับเข้าสุกร" });
 
         const trInitial = document.createElement('tr');
         trInitial.style.backgroundColor = "#f8fafc"; 
-        // 💡 ตัดข้อความชื่อโรงเรือนออก เหลือแค่ "รับเข้าสุกร"
         trInitial.innerHTML = `<td>${firstRowDateDisplay}</td><td>${initialAge}</td><td>-</td><td>-</td><td class="note-col"><strong>รับเข้าสุกร</strong></td><td></td>`;
         tbody.appendChild(trInitial);
 
@@ -645,7 +670,7 @@
             const vacNameFull = row.tradeName ? `${row.vacType} (${row.tradeName})` : row.vacType;
 
             tasksToSave.push({ taskId: uniqueTaskId, farmName: farm, swineType: typeText, targetDate: standardDateForDB, vaccineName: vacNameFull });
-            currentSchedulePayload.scheduleData.push({ date: dateDisplay, age: calculatedAge, vac: vacNameFull });
+            payloadForCart.scheduleData.push({ date: dateDisplay, age: calculatedAge, vac: vacNameFull });
 
             const tr = document.createElement('tr');
             tr.innerHTML = `<td>${dateDisplay === lastDate ? "" : dateDisplay}</td><td>${calculatedAge}</td><td>${row.vacType || '-'}</td><td>${row.tradeName || '-'}</td><td class="note-col">${row.note || ''}</td><td></td>`;
@@ -653,6 +678,7 @@
             lastDate = dateDisplay;
         });
 
+        // บันทึกข้อมูลคิวงานลง Google Sheets ทันที
         fetch(SCRIPT_URL, { 
             method: 'POST', 
             body: JSON.stringify({ 
@@ -662,7 +688,11 @@
                 },
                 tasks: tasksToSave 
             }) 
-        }).then(res => console.log("บันทึกคิวงานและข้อมูล Batch สำเร็จ")).catch(err => console.error("Error saving tasks"));
+        }).then(res => console.log("บันทึกคิวงาน Batch สำเร็จ")).catch(err => console.error("Error saving tasks"));
+
+        // 💡 นำเข้าตะกร้าเก็บงาน และอัปเดตตัวเลขปุ่ม LINE
+        scheduleCart.push(payloadForCart);
+        document.getElementById('btnSendLine').innerText = `📲 ส่งการ์ดทั้ง ${scheduleCart.length} ชุดเข้า LINE`;
 
         const today = new Date();
         document.getElementById('lblPrintDate').innerText = formatDateThai(today) + " " + today.toLocaleTimeString('th-TH');
@@ -672,18 +702,43 @@
         document.getElementById('a4Section').style.display = 'flex';
     }
 
+    // 💡 ฟังก์ชันส่งข้อมูลในตะกร้าเข้า LINE
     function sendScheduleToLine() {
+        if(scheduleCart.length === 0) return;
         const btn = document.getElementById('btnSendLine');
-        btn.innerText = "⏳ กำลังส่งการ์ดเข้า LINE...";
+        btn.innerText = "⏳ กำลังส่งเข้า LINE...";
         btn.disabled = true;
         btn.style.opacity = "0.7";
 
-        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "sendScheduleCard", ...currentSchedulePayload }) })
+        // ส่งข้อมูลทั้งตะกร้า (Array) ไปให้สมองกลทีเดียว
+        fetch(SCRIPT_URL, { 
+            method: 'POST', 
+            body: JSON.stringify({ action: "sendScheduleCard", farmName: currentFarmForCart, cart: scheduleCart }) 
+        })
         .then(res => res.json()).then(data => {
-            if(data.status === "success"){ btn.innerText = "✅ ส่งการ์ดตารางสำเร็จ!"; btn.style.background = "#16a34a"; } 
-            else { btn.innerText = "❌ " + (data.message || "เกิดข้อผิดพลาด"); btn.style.background = "#dc2626"; }
-            setTimeout(() => { btn.innerText = "📲 ส่งการ์ดโปรแกรมเข้า LINE"; btn.style.background = "#0284c7"; btn.disabled = false; btn.style.opacity = "1"; }, 5000);
-        }).catch(err => { btn.innerText = "❌ เชื่อมต่อไม่ได้"; btn.style.background = "#dc2626"; btn.disabled = false; btn.style.opacity = "1"; });
+            if(data.status === "success"){ 
+                btn.innerText = "✅ ส่งการ์ดสำเร็จ!"; 
+                btn.style.background = "#16a34a"; 
+                // เคลียร์ตะกร้าเมื่อส่งเสร็จ
+                scheduleCart = []; 
+                currentFarmForCart = "";
+            } 
+            else { 
+                btn.innerText = "❌ " + (data.message || "เกิดข้อผิดพลาด"); 
+                btn.style.background = "#dc2626"; 
+            }
+            setTimeout(() => { 
+                btn.innerText = "📲 ส่งการ์ดเข้า LINE"; 
+                btn.style.background = "#0284c7"; 
+                btn.disabled = false; 
+                btn.style.opacity = "1"; 
+            }, 5000);
+        }).catch(err => { 
+            btn.innerText = "❌ เชื่อมต่อไม่ได้"; 
+            btn.style.background = "#dc2626"; 
+            btn.disabled = false; 
+            btn.style.opacity = "1"; 
+        });
     }
 </script>
 </body>
