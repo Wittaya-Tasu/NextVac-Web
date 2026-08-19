@@ -11,10 +11,10 @@
             --font-size-main: 13pt;      
             --font-size-header: 16pt;    
             --font-size-note: 12pt;      
-            --font-size-trace: 10pt;     
-            --sig-margin-top: 50px; 
-            --sig-space-height: 50px; 
-            --sig-margin-bottom: 30px; 
+            --font-size-trace: 9pt;     /* 💡 ลดขนาดตัวอักษรลงนิดหน่อย */
+            --sig-margin-top: 20px;     /* 💡 ลดพื้นที่ว่างด้านบนลายเซ็นลงครึ่งหนึ่ง */
+            --sig-space-height: 30px;   /* 💡 ลดพื้นที่เซ็นชื่อลงให้กระชับขึ้น */
+            --sig-margin-bottom: 20px; 
         }
 
         body { font-family: 'Sarabun', sans-serif; background-color: #f1f5f9; padding: 20px; color: #1e293b; margin: 0; }
@@ -38,24 +38,56 @@
 
         /* A4 Styles */
         .a4-wrapper { display: none; flex-direction: column; align-items: center; }
-        .a4-page { width: 210mm; height: 297mm; background: white; margin: 0 auto; padding: 10mm 15mm; box-sizing: border-box; font-size: var(--font-size-main); position: relative; overflow: hidden; color: black; display: flex; flex-direction: column; }
+        .a4-page { width: 210mm; min-height: 297mm; background: white; margin: 0 auto; padding: 10mm 15mm; box-sizing: border-box; font-size: var(--font-size-main); position: relative; color: black; display: flex; flex-direction: column; }
         .a4-header-text { text-align: center; font-size: var(--font-size-header); font-weight: bold; margin-bottom: 15px; flex-shrink: 0; }
         .info-table { width: 100%; margin-bottom: 15px; font-size: var(--font-size-main); flex-shrink: 0; }
+        
+        /* 💡 ปรับปรุงตารางให้กว้างพอดีข้อความและไม่ขึ้นบรรทัดใหม่ */
         .vaccine-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: var(--font-size-main); flex-shrink: 0; }
-        .vaccine-table th, .vaccine-table td { border: 1px solid black; padding: 6px; text-align: center; }
-        .vaccine-table .note-col { text-align: left; padding-left: 10px; font-size: var(--font-size-note); }
-        .signature-section { display: flex; justify-content: space-between; margin-top: var(--sig-margin-top); margin-bottom: var(--sig-margin-bottom); font-size: var(--font-size-main); flex-shrink: 0; }
+        .vaccine-table th, .vaccine-table td { 
+            border: 1px solid black; 
+            padding: 4px 8px; 
+            text-align: center; 
+            white-space: nowrap; /* บังคับไม่ให้ข้อความตัดขึ้นบรรทัดใหม่ */
+        }
+        .vaccine-table .note-col { 
+            text-align: left; 
+            padding-left: 10px; 
+            font-size: var(--font-size-note); 
+            white-space: normal; /* อนุญาตให้เฉพาะช่องหมายเหตุขึ้นบรรทัดใหม่ได้ถ้ายาวเกินไป */
+            width: 100%; /* ดันช่องหมายเหตุให้กินพื้นที่ส่วนที่เหลือทั้งหมด */
+        }
+
+        .signature-section { 
+            display: flex; justify-content: space-between; 
+            margin-top: var(--sig-margin-top); 
+            margin-bottom: var(--sig-margin-bottom); 
+            font-size: var(--font-size-main); 
+            flex-shrink: 0; 
+            page-break-inside: avoid; /* 💡 ป้องกันไม่ให้ลายเซ็นถูกตัดครึ่งถ้าอยู่รอยต่อหน้ากระดาษ */
+        }
         .signature-box { text-align: center; width: 45%; display: flex; flex-direction: column; align-items: center; }
         .sig-space { height: var(--sig-space-height); } 
         .sig-line { border-top: 1px dashed black; width: 80%; margin: 0 auto 5px auto; } 
-        .traceability { position: absolute; bottom: 10mm; width: calc(100% - 30mm); left: 15mm; font-size: var(--font-size-trace); color: #94a3b8; text-align: center; display: flex; justify-content: center; gap: 20px; }
+        
+        /* 💡 เปลี่ยนมายืนด้านบนแทน ไม่ใช้ position absolute แล้ว */
+        .traceability { 
+            font-size: var(--font-size-trace); 
+            color: #64748b; 
+            text-align: right; 
+            display: flex; 
+            justify-content: flex-end; 
+            gap: 15px; 
+            width: 100%;
+            margin-bottom: 10px;
+        }
 
         @media print {
             @page { size: A4; margin: 0; }
             body { background: white; margin: 0; padding: 0; }
             .no-print { display: none !important; }
             .a4-wrapper { display: block; }
-            .a4-page { width: 210mm; height: 297mm; padding: 15mm; }
+            .a4-page { width: 210mm; min-height: 297mm; padding: 15mm; }
         }
     </style>
 </head>
@@ -215,6 +247,12 @@
     </div>
 
     <div class="a4-page" id="a4Paper">
+        <!-- 💡 ย้ายหมายเหตุเอกสารมาไว้บนสุด -->
+        <div class="traceability">
+            <span>พิมพ์เมื่อ: <span id="lblPrintDate"></span></span>
+            <span>รหัสเอกสาร: <span id="lblRefId"></span></span>
+        </div>
+
         <div class="a4-header-text">โปรแกรมวัคซีน : <span id="lblProgName"></span></div>
         <table class="info-table" style="border-collapse: collapse; line-height: 1.8; margin-bottom: 25px;">
             <tr>
@@ -246,12 +284,13 @@
         <table class="vaccine-table">
             <thead>
                 <tr>
-                    <th width="16%">วันที่</th>
-                    <th width="10%">อายุ(สป.)</th>
-                    <th width="16%">เวชภัณฑ์</th>
-                    <th width="18%">ชื่อการค้า</th>
-                    <th width="24%">หมายเหตุ</th>
-                    <th width="16%">สถานะ</th>
+                    <!-- 💡 เอาการตั้งค่าความกว้างออกแบบ % ออก เพื่อให้ระบบจัดความกว้างพอดีคำอัตโนมัติ -->
+                    <th>วันที่</th>
+                    <th>อายุ(สป.)</th>
+                    <th>เวชภัณฑ์</th>
+                    <th>รายละเอียด</th>
+                    <th class="note-col" style="text-align:center;">หมายเหตุ</th>
+                    <th>สถานะ</th>
                 </tr>
             </thead>
             <tbody id="vaccineTableBody"></tbody>
@@ -272,11 +311,6 @@
                 <div>ผู้จัดการฟาร์ม</div>
                 <div style="margin-top:5px;">วันที่ _______/_______/_______</div>
             </div>
-        </div>
-
-        <div class="traceability">
-            <span>พิมพ์เมื่อ: <span id="lblPrintDate"></span></span>
-            <span>รหัสเอกสาร: <span id="lblRefId"></span></span>
         </div>
     </div>
 </div>
@@ -353,7 +387,6 @@
         const farmSelect = document.getElementById('farmSelect');
         regSelect.innerHTML = '<option value="">-- เลือกภาค --</option>';
 
-        // 💡 ให้ระบบสร้างตัวเลือก "ประเภทสุกร" อัตโนมัติจากข้อมูลโปรแกรมวัคซีน
         const swineSelect = document.getElementById('swineType');
         swineSelect.innerHTML = '<option value="">-- เลือกประเภท --</option>';
         const uniqueTypes = new Set();
@@ -641,7 +674,7 @@
         document.getElementById('lblFarm').innerText = farm;
         document.getElementById('lblRegion').innerText = region;
         document.getElementById('lblHouse').innerText = houseName;
-        document.getElementById('lblType').innerText = typeText;
+        document.getElementById('lblType').innerText = typeText.split(' : ')[0]; // แสดงแค่ชื่อสั้น
         document.getElementById('lblQty').innerText = qty;
         
         document.getElementById('lblDate').innerText = getShortThaiDate(admDate); 
@@ -655,7 +688,7 @@
         const baseDateObj = new Date(admDate);
         const batchId = `B-${new Date().getFullYear()}${String(new Date().getMonth()+1).padStart(2,'0')}${String(new Date().getDate()).padStart(2,'0')}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-        let payloadForCart = { summaryInfo: { type: typeText, qty: qty, admDate: formatDateThai(admDate), batchId: batchId, houseName: houseName }, scheduleData: [] };
+        let payloadForCart = { summaryInfo: { type: typeText.split(' : ')[0], qty: qty, admDate: formatDateThai(admDate), batchId: batchId, houseName: houseName }, scheduleData: [] };
 
         const firstRowDateDisplay = formatDateThai(baseDateObj);
         let lastDate = firstRowDateDisplay; 
@@ -678,7 +711,7 @@
             const uniqueTaskId = `TK-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 100)}`;
             const vacNameFull = row.tradeName ? `${row.vacType} (${row.tradeName})` : row.vacType;
 
-            tasksToSave.push({ taskId: uniqueTaskId, farmName: farm, swineType: typeText, targetDate: standardDateForDB, vaccineName: vacNameFull });
+            tasksToSave.push({ taskId: uniqueTaskId, farmName: farm, swineType: typeText.split(' : ')[0], targetDate: standardDateForDB, vaccineName: vacNameFull });
             payloadForCart.scheduleData.push({ date: dateDisplay, age: calculatedAge, vac: vacNameFull });
 
             const tr = document.createElement('tr');
@@ -692,7 +725,7 @@
             body: JSON.stringify({ 
                 action: "saveTasks", 
                 batchInfo: {
-                    batchId: batchId, farmName: farm, region: region, type: typeText, qty: qty, admDate: admDate, vetName: farmOpt.dataset.vet, houseName: houseName
+                    batchId: batchId, farmName: farm, region: region, type: typeText.split(' : ')[0], qty: qty, admDate: admDate, vetName: farmOpt.dataset.vet, houseName: houseName
                 },
                 tasks: tasksToSave 
             }) 
@@ -704,7 +737,7 @@
         const today = new Date();
         document.getElementById('lblPrintDate').innerText = formatDateThai(today) + " " + today.toLocaleTimeString('th-TH');
         document.getElementById('lblRefId').innerText = `REF-${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}-${Math.floor(1000 + Math.random() * 9000)}`;
-        document.title = `${farm}_${houseName}_${typeText}_${progName}_${formatDateThai(admDate).replace(/\//g,'-')}`;
+        document.title = `${farm}_${houseName}_${typeText.split(' : ')[0]}_${progName}_${formatDateThai(admDate).replace(/\//g,'-')}`;
         document.getElementById('appWrapper').style.display = 'none';
         document.getElementById('a4Section').style.display = 'flex';
     }
