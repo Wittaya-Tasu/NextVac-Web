@@ -181,11 +181,6 @@
             <label>ประเภทของสุกร</label>
             <select id="swineType" onchange="updatePrograms()" required>
                 <option value="">-- เลือกประเภท --</option>
-                <option value="หย่านม-ขุน : Wean-Finish">หย่านม-ขุน : Wean-Finish</option>
-                <option value="อนุบาล-ขุน : Nursery-Finish">อนุบาล-ขุน : Nursery-Finish</option>
-                <option value="หย่านม-รุ่นพันธุ์ : Wean-Selection">หย่านม-รุ่นพันธุ์ : Wean-Selection</option>
-                <option value="สาวทดแทน : Gilt Repacement">สาวทดแทน : Gilt Repacement</option>
-                <option value="พ่อพันธุ์ทดแทน : Boar Repacement">พ่อพันธุ์ทดแทน : Boar Repacement</option>
             </select>
 
             <label>เลือกโปรแกรมวัคซีน</label>
@@ -356,6 +351,16 @@
         const farmSelect = document.getElementById('farmSelect');
         regSelect.innerHTML = '<option value="">-- เลือกภาค --</option>';
 
+        // 💡 เพิ่มโค้ดส่วนนี้: ให้ระบบสร้างตัวเลือก "ประเภทสุกร" อัตโนมัติจากข้อมูลโปรแกรมวัคซีน
+        const swineSelect = document.getElementById('swineType');
+        swineSelect.innerHTML = '<option value="">-- เลือกประเภท --</option>';
+        const uniqueTypes = new Set();
+        masterData.programs.forEach(p => {
+            if (p.type) uniqueTypes.add(p.type);
+        });
+        // นำประเภทที่เจอมาใส่เป็นตัวเลือกให้ผู้ใช้งาน
+        Array.from(uniqueTypes).forEach(t => swineSelect.add(new Option(t, t)));
+        
         if (currentUser.role === "Farm") {
             regSelect.innerHTML = `<option value="${currentUser.region}">${currentUser.region}</option>`;
             regSelect.disabled = true;
