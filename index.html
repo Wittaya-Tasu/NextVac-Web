@@ -203,7 +203,6 @@
 </div>
 
 <div class="a4-wrapper" id="a4Section">
-    <!-- 💡 ปรับปรุงปุ่มควบคุมด้านบน A4 ให้รองรับระบบตะกร้า (Cart) -->
     <div class="no-print" style="margin-bottom:20px; width:210mm; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
         <button style="padding:10px; cursor:pointer;" onclick="closeA4()">⬅️ ย้อนกลับ</button>
         
@@ -249,10 +248,10 @@
                 <tr>
                     <th width="16%">วันที่</th>
                     <th width="10%">อายุ(สป.)</th>
-                    <th width="16%">วัคซีน</th>
+                    <th width="16%">เวชภัณฑ์</th>
                     <th width="18%">ชื่อการค้า</th>
                     <th width="24%">หมายเหตุ</th>
-                    <th width="16%">วันที่ทำจริง</th>
+                    <th width="16%">สถานะ</th>
                 </tr>
             </thead>
             <tbody id="vaccineTableBody"></tbody>
@@ -292,7 +291,7 @@
     let currentUser = null; 
     let currentDashboardData = []; 
     
-    // 💡 ตัวแปรระบบตะกร้าเก็บงาน (Cart)
+    // ตัวแปรระบบตะกร้าเก็บงาน (Cart)
     let scheduleCart = []; 
     let currentFarmForCart = "";
 
@@ -307,7 +306,10 @@
             
             document.getElementById('loading').style.display = 'none';
             document.getElementById('loginSection').style.display = 'block';
-        } catch (e) { document.getElementById('loading').innerText = "❌ ระบบขัดข้อง ไม่สามารถดึงข้อมูลได้"; }
+        } catch (e) { 
+            console.error("Fetch Error:", e);
+            document.getElementById('loading').innerHTML = "❌ ระบบขัดข้อง ไม่สามารถดึงข้อมูลได้<br><span style='font-size:14px; color:#64748b; font-weight:normal; margin-top:10px; display:block;'>กรุณาตรวจสอบการ Deploy Code.gs (เวอร์ชันใหม่) หรือตรวจสอบความถูกต้องของชื่อชีตใน Google Sheets</span>"; 
+        }
     };
 
     function doLogin(e) {
@@ -351,14 +353,13 @@
         const farmSelect = document.getElementById('farmSelect');
         regSelect.innerHTML = '<option value="">-- เลือกภาค --</option>';
 
-        // 💡 เพิ่มโค้ดส่วนนี้: ให้ระบบสร้างตัวเลือก "ประเภทสุกร" อัตโนมัติจากข้อมูลโปรแกรมวัคซีน
+        // 💡 ให้ระบบสร้างตัวเลือก "ประเภทสุกร" อัตโนมัติจากข้อมูลโปรแกรมวัคซีน
         const swineSelect = document.getElementById('swineType');
         swineSelect.innerHTML = '<option value="">-- เลือกประเภท --</option>';
         const uniqueTypes = new Set();
         masterData.programs.forEach(p => {
             if (p.type) uniqueTypes.add(p.type);
         });
-        // นำประเภทที่เจอมาใส่เป็นตัวเลือกให้ผู้ใช้งาน
         Array.from(uniqueTypes).forEach(t => swineSelect.add(new Option(t, t)));
         
         if (currentUser.role === "Farm") {
@@ -570,12 +571,11 @@
    function updatePrograms() {
         const type = document.getElementById('swineType').value;
         const currentFarm = document.getElementById('farmSelect').value; 
-        const currentRegion = document.getElementById('regionSelect').value; // 💡 ดึงค่า 'ภาค' มาใช้ด้วย
+        const currentRegion = document.getElementById('regionSelect').value; 
         
         const progSelect = document.getElementById('programSelect');
         progSelect.innerHTML = '<option value="">-- เลือกโปรแกรม --</option>';
         
-        // 💡 ปรับตรรกะการกรอง: ให้ผ่านถ้าเป็น Global หรือ ชื่อตรงกับฟาร์ม หรือ ชื่อตรงกับภาค
         const filtered = masterData.programs.filter(p => 
             p.type === type && 
             (p.owner === 'Global' || p.owner === currentFarm || p.owner === currentRegion)
@@ -607,16 +607,13 @@
         document.getElementById('appWrapper').style.display = 'block';
     }
 
-    // 💡 ฟังก์ชันสร้างรุ่นต่อไป (เคลียร์ข้อมูลเพื่อรับเล้าใหม่)
     function createNewBatch() {
         document.getElementById('a4Section').style.display = 'none';
         document.getElementById('appWrapper').style.display = 'block';
         
-        // เคลียร์เฉพาะชื่อโรงเรือนและจำนวนตัว เพื่อความรวดเร็ว
         document.getElementById('houseName').value = '';
         document.getElementById('totalQty').value = '';
         
-        // เลื่อนหน้าจอขึ้นบนสุดและให้เคอร์เซอร์ไปรอที่ช่องชื่อโรงเรือน
         window.scrollTo(0, 0);
         document.getElementById('houseName').focus();
     }
@@ -626,7 +623,7 @@
         const farmOpt = document.getElementById('farmSelect').options[document.getElementById('farmSelect').selectedIndex];
         const farm = farmOpt.value;
         const region = document.getElementById('regionSelect').value;
-        const typeText = document.getElementById('swineType').value.split(' : ')[0];
+        const typeText = document.getElementById('swineType').value;
         const progSelect = document.getElementById('programSelect');
         const progId = progSelect.value;
         const progName = progSelect.options[progSelect.selectedIndex].text;
@@ -635,7 +632,6 @@
         const qty = document.getElementById('totalQty').value;
         const initialAge = parseInt(document.getElementById('pigAge').value);
 
-        // 💡 ตรวจสอบตะกร้า: ถ้ามีการเปลี่ยนฟาร์มกะทันหัน ให้เคลียร์ตะกร้าทิ้ง (ป้องกันการส่งปนกัน)
         if (currentFarmForCart !== "" && currentFarmForCart !== farm) {
             scheduleCart = []; 
         }
@@ -691,7 +687,6 @@
             lastDate = dateDisplay;
         });
 
-        // บันทึกข้อมูลคิวงานลง Google Sheets ทันที
         fetch(SCRIPT_URL, { 
             method: 'POST', 
             body: JSON.stringify({ 
@@ -703,7 +698,6 @@
             }) 
         }).then(res => console.log("บันทึกคิวงาน Batch สำเร็จ")).catch(err => console.error("Error saving tasks"));
 
-        // 💡 นำเข้าตะกร้าเก็บงาน และอัปเดตตัวเลขปุ่ม LINE
         scheduleCart.push(payloadForCart);
         document.getElementById('btnSendLine').innerText = `📲 ส่งการ์ดทั้ง ${scheduleCart.length} ชุดเข้า LINE`;
 
@@ -715,7 +709,6 @@
         document.getElementById('a4Section').style.display = 'flex';
     }
 
-    // 💡 ฟังก์ชันส่งข้อมูลในตะกร้าเข้า LINE
     function sendScheduleToLine() {
         if(scheduleCart.length === 0) return;
         const btn = document.getElementById('btnSendLine');
@@ -723,7 +716,6 @@
         btn.disabled = true;
         btn.style.opacity = "0.7";
 
-        // ส่งข้อมูลทั้งตะกร้า (Array) ไปให้สมองกลทีเดียว
         fetch(SCRIPT_URL, { 
             method: 'POST', 
             body: JSON.stringify({ action: "sendScheduleCard", farmName: currentFarmForCart, cart: scheduleCart }) 
@@ -732,7 +724,6 @@
             if(data.status === "success"){ 
                 btn.innerText = "✅ ส่งการ์ดสำเร็จ!"; 
                 btn.style.background = "#16a34a"; 
-                // เคลียร์ตะกร้าเมื่อส่งเสร็จ
                 scheduleCart = []; 
                 currentFarmForCart = "";
             } 
