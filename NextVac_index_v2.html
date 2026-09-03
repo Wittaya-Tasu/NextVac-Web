@@ -1,0 +1,1481 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="NextVac — ระบบวางแผน ติดตาม และแจ้งเตือนโปรแกรมวัคซีนสุกร">
+  <meta name="theme-color" content="#12372a">
+  <meta name="nextvac-api-url" content="https://script.google.com/macros/s/AKfycbw3cIvRIR2-65excyOL24QqT6EMRHZlMauHlEOOCLAx4O65xbOxs0MDvFEpfLjqJc_S/exec">
+  <title>NextVac | Smart Swine Vaccine Management</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17211c;
+      --muted: #65736b;
+      --line: #dbe4de;
+      --line-strong: #c7d4cb;
+      --paper: #ffffff;
+      --canvas: #f3f7f4;
+      --brand-950: #0a241b;
+      --brand-900: #12372a;
+      --brand-800: #18503a;
+      --brand-700: #1f694b;
+      --brand-600: #287e5b;
+      --brand-100: #dff1e7;
+      --brand-50: #eff8f2;
+      --lime: #b8df55;
+      --amber: #c97a12;
+      --amber-bg: #fff6e7;
+      --red: #bb3e3e;
+      --red-bg: #fff0ef;
+      --blue: #256f86;
+      --blue-bg: #eaf5f8;
+      --green: #27734d;
+      --green-bg: #e9f6ee;
+      --shadow-sm: 0 1px 2px rgba(13, 38, 27, .05), 0 4px 14px rgba(13, 38, 27, .04);
+      --shadow-lg: 0 24px 70px rgba(10, 36, 27, .16);
+      --radius-sm: 10px;
+      --radius: 16px;
+      --radius-lg: 24px;
+      --sidebar: 264px;
+    }
+
+    * { box-sizing: border-box; }
+    html { min-width: 320px; background: var(--canvas); }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background: var(--canvas);
+      font-family: "Noto Sans Thai", "Leelawadee UI", Tahoma, system-ui, -apple-system, sans-serif;
+      font-size: 16px;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: .62; }
+    input, select {
+      width: 100%;
+      min-height: 46px;
+      padding: 10px 12px;
+      color: var(--ink);
+      background: var(--paper);
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-sm);
+      outline: none;
+      transition: border-color .16s ease, box-shadow .16s ease, background .16s ease;
+    }
+    input:hover, select:hover { border-color: #9db2a4; }
+    input:focus, select:focus {
+      border-color: var(--brand-600);
+      box-shadow: 0 0 0 4px rgba(40, 126, 91, .12);
+    }
+    input[aria-invalid="true"], select[aria-invalid="true"] {
+      border-color: var(--red);
+      box-shadow: 0 0 0 4px rgba(187, 62, 62, .10);
+    }
+    ::placeholder { color: #9aa7a0; }
+    :focus-visible { outline: 3px solid rgba(184, 223, 85, .72); outline-offset: 2px; }
+
+    .hidden { display: none !important; }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .icon {
+      width: 20px;
+      height: 20px;
+      display: inline-block;
+      flex: 0 0 auto;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .icon-lg { width: 24px; height: 24px; }
+
+    .btn {
+      min-height: 44px;
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
+      padding: 9px 15px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: transform .14s ease, background .14s ease, border-color .14s ease, box-shadow .14s ease;
+    }
+    .btn:hover:not(:disabled) { transform: translateY(-1px); }
+    .btn-primary { color: #fff; background: var(--brand-800); box-shadow: 0 7px 18px rgba(24, 80, 58, .17); }
+    .btn-primary:hover:not(:disabled) { background: var(--brand-700); }
+    .btn-secondary { color: var(--brand-900); background: var(--paper); border-color: var(--line-strong); }
+    .btn-secondary:hover:not(:disabled) { background: var(--brand-50); border-color: #adc4b5; }
+    .btn-quiet { min-height: 38px; padding: 7px 10px; color: var(--muted); background: transparent; border-color: transparent; }
+    .btn-quiet:hover:not(:disabled) { color: var(--brand-900); background: var(--brand-50); }
+    .btn-danger { color: var(--red); background: var(--red-bg); border-color: #f1cac7; }
+    .btn-block { width: 100%; }
+
+    .field { display: grid; gap: 7px; min-width: 0; }
+    .field label { color: #32423a; font-size: .875rem; font-weight: 700; }
+    .field-note { margin: 0; color: var(--muted); font-size: .78rem; }
+    .input-wrap { position: relative; }
+    .input-wrap input { padding-right: 48px; }
+    .input-action {
+      position: absolute;
+      top: 50%;
+      right: 5px;
+      transform: translateY(-50%);
+      width: 38px;
+      height: 38px;
+      padding: 0;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      background: transparent;
+      border: 0;
+      border-radius: 8px;
+    }
+    .input-action:hover { color: var(--brand-800); background: var(--brand-50); }
+
+    .boot-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      background: var(--brand-950);
+    }
+    .boot-mark { display: grid; justify-items: center; gap: 16px; }
+    .boot-logo, .brand-logo {
+      display: grid;
+      place-items: center;
+      color: var(--brand-950);
+      background: var(--lime);
+      border-radius: 14px;
+      font-weight: 900;
+      letter-spacing: -.04em;
+    }
+    .boot-logo { width: 58px; height: 58px; font-size: 1.1rem; }
+    .boot-dots { display: flex; gap: 7px; }
+    .boot-dots i {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--lime);
+      animation: pulse 1s infinite ease-in-out;
+    }
+    .boot-dots i:nth-child(2) { animation-delay: .15s; }
+    .boot-dots i:nth-child(3) { animation-delay: .3s; }
+    @keyframes pulse { 0%, 100% { opacity: .25; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-4px); } }
+
+    .login-page {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(420px, .95fr);
+      background: var(--paper);
+    }
+    .login-brand {
+      position: relative;
+      overflow: hidden;
+      min-height: 640px;
+      padding: clamp(32px, 6vw, 88px);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      color: #fff;
+      background:
+        radial-gradient(circle at 16% 18%, rgba(184, 223, 85, .19), transparent 27%),
+        radial-gradient(circle at 82% 78%, rgba(54, 149, 104, .28), transparent 31%),
+        var(--brand-950);
+    }
+    .login-brand::after {
+      content: "";
+      position: absolute;
+      right: -120px;
+      bottom: -160px;
+      width: 470px;
+      height: 470px;
+      border: 1px solid rgba(255,255,255,.11);
+      border-radius: 50%;
+      box-shadow: 0 0 0 70px rgba(255,255,255,.028), 0 0 0 140px rgba(255,255,255,.018);
+    }
+    .login-brand > * { position: relative; z-index: 1; }
+    .login-lockup { display: flex; align-items: center; gap: 13px; }
+    .brand-logo { width: 43px; height: 43px; }
+    .login-lockup strong { display: block; font-size: 1.2rem; letter-spacing: -.02em; }
+    .login-lockup span { color: rgba(255,255,255,.64); font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; }
+    .login-story { max-width: 620px; }
+    .eyebrow {
+      margin: 0 0 14px;
+      color: var(--brand-600);
+      font-size: .75rem;
+      font-weight: 800;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+    .login-story .eyebrow { color: var(--lime); }
+    .login-story h1 {
+      max-width: 610px;
+      margin: 0;
+      font-size: clamp(2.2rem, 4.5vw, 4.6rem);
+      line-height: 1.08;
+      letter-spacing: -.055em;
+    }
+    .login-story p { max-width: 550px; margin: 22px 0 0; color: rgba(255,255,255,.7); font-size: 1.04rem; }
+    .login-points { margin: 34px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; list-style: none; }
+    .login-points li { padding: 14px 15px; border: 1px solid rgba(255,255,255,.11); border-radius: 14px; background: rgba(255,255,255,.045); backdrop-filter: blur(8px); }
+    .login-points strong { display: block; color: var(--lime); font-size: 1.25rem; }
+    .login-points span { color: rgba(255,255,255,.65); font-size: .75rem; }
+    .login-foot { color: rgba(255,255,255,.45); font-size: .75rem; }
+    .login-panel { padding: 36px; display: grid; place-items: center; background: #fbfdfb; }
+    .login-card { width: min(100%, 430px); padding: 38px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); }
+    .login-card h2 { margin: 0; font-size: 1.65rem; letter-spacing: -.025em; }
+    .login-card > p { margin: 8px 0 28px; color: var(--muted); }
+    .login-form { display: grid; gap: 18px; }
+    .login-error { margin: -5px 0 0; padding: 11px 12px; color: #8e2b2b; background: var(--red-bg); border: 1px solid #f1cac7; border-radius: 10px; font-size: .875rem; }
+    .security-note { margin: 20px 0 0; display: flex; align-items: flex-start; gap: 8px; color: var(--muted); font-size: .76rem; }
+    .security-note .icon { width: 16px; height: 16px; margin-top: 2px; }
+
+    .app-shell { min-height: 100vh; }
+    .sidebar {
+      position: fixed;
+      inset: 0 auto 0 0;
+      z-index: 30;
+      width: var(--sidebar);
+      padding: 22px 16px;
+      display: flex;
+      flex-direction: column;
+      color: #fff;
+      background: var(--brand-950);
+    }
+    .sidebar-brand { padding: 4px 8px 22px; display: flex; align-items: center; gap: 12px; }
+    .sidebar-brand strong { display: block; font-size: 1.12rem; }
+    .sidebar-brand span { display: block; color: rgba(255,255,255,.48); font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; }
+    .sidebar-nav { display: grid; gap: 6px; }
+    .nav-btn {
+      width: 100%;
+      min-height: 46px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      color: rgba(255,255,255,.64);
+      background: transparent;
+      border: 0;
+      border-radius: 11px;
+      text-align: left;
+      font-weight: 700;
+    }
+    .nav-btn:hover { color: #fff; background: rgba(255,255,255,.065); }
+    .nav-btn[aria-current="page"] { color: #fff; background: var(--brand-800); box-shadow: inset 3px 0 0 var(--lime); }
+    .sidebar-meta { margin-top: auto; padding: 14px 10px 3px; color: rgba(255,255,255,.42); font-size: .72rem; }
+    .sidebar-meta strong { color: rgba(255,255,255,.7); }
+    .mobile-bar { display: none; }
+    .main-shell { min-height: 100vh; margin-left: var(--sidebar); }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      min-height: 72px;
+      padding: 12px clamp(20px, 3vw, 42px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      background: rgba(243, 247, 244, .9);
+      border-bottom: 1px solid rgba(199, 212, 203, .7);
+      backdrop-filter: blur(14px);
+    }
+    .breadcrumb { color: var(--muted); font-size: .78rem; }
+    .breadcrumb strong { display: block; color: var(--ink); font-size: 1rem; }
+    .top-actions { display: flex; align-items: center; gap: 10px; }
+    .connection-pill {
+      padding: 6px 10px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--green);
+      background: var(--green-bg);
+      border: 1px solid #cfe9d9;
+      border-radius: 999px;
+      font-size: .75rem;
+      font-weight: 700;
+    }
+    .connection-pill i { width: 7px; height: 7px; background: currentColor; border-radius: 50%; }
+    .user-chip { padding: 5px 8px 5px 5px; display: flex; align-items: center; gap: 9px; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); }
+    .avatar { width: 34px; height: 34px; display: grid; place-items: center; color: #fff; background: var(--brand-800); border-radius: 50%; font-size: .76rem; font-weight: 800; }
+    .user-copy { min-width: 0; line-height: 1.2; }
+    .user-copy strong { max-width: 180px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .78rem; }
+    .user-copy span { color: var(--muted); font-size: .67rem; }
+    .content { width: min(100%, 1520px); margin: 0 auto; padding: 34px clamp(20px, 3vw, 42px) 64px; }
+    .view { animation: fadeIn .22s ease both; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } }
+    .page-head { margin-bottom: 26px; display: flex; justify-content: space-between; align-items: flex-end; gap: 18px; }
+    .page-head h1 { margin: 0; font-size: clamp(1.65rem, 2.5vw, 2.2rem); letter-spacing: -.035em; line-height: 1.2; }
+    .page-head p { margin: 7px 0 0; color: var(--muted); }
+    .page-actions { display: flex; gap: 9px; flex-wrap: wrap; }
+
+    .kpi-grid { margin-bottom: 20px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+    .kpi-card { min-height: 145px; padding: 20px; position: relative; overflow: hidden; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-sm); }
+    .kpi-card::after { content: ""; position: absolute; top: -34px; right: -34px; width: 90px; height: 90px; border-radius: 50%; background: var(--kpi-tint, var(--brand-50)); }
+    .kpi-card .kpi-icon { width: 36px; height: 36px; display: grid; place-items: center; color: var(--kpi-color, var(--brand-700)); background: var(--kpi-tint, var(--brand-50)); border-radius: 10px; }
+    .kpi-card p { margin: 14px 0 1px; color: var(--muted); font-size: .78rem; font-weight: 700; }
+    .kpi-card strong { display: inline-block; font-size: 2rem; line-height: 1.15; letter-spacing: -.04em; }
+    .kpi-card span { margin-left: 5px; color: var(--muted); font-size: .72rem; }
+    .kpi-overdue { --kpi-color: var(--red); --kpi-tint: var(--red-bg); }
+    .kpi-complete { --kpi-color: var(--green); --kpi-tint: var(--green-bg); }
+    .kpi-progress { --kpi-color: var(--blue); --kpi-tint: var(--blue-bg); }
+
+    .panel { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-sm); }
+    .filter-panel { margin-bottom: 14px; padding: 14px; display: grid; grid-template-columns: minmax(210px, 1.35fr) repeat(3, minmax(150px, .75fr)); gap: 10px; }
+    .search-field { position: relative; }
+    .search-field .icon { position: absolute; top: 50%; left: 13px; color: var(--muted); transform: translateY(-50%); }
+    .search-field input { padding-left: 42px; }
+    .data-panel { overflow: hidden; }
+    .data-head { padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); }
+    .data-head strong { font-size: .92rem; }
+    .data-head span { color: var(--muted); font-size: .75rem; }
+    .table-wrap { overflow: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 14px 16px; text-align: left; vertical-align: middle; border-bottom: 1px solid #e8eee9; }
+    th { color: var(--muted); background: #fafcfb; font-size: .72rem; font-weight: 800; letter-spacing: .035em; white-space: nowrap; }
+    td { font-size: .84rem; }
+    tbody tr:last-child td { border-bottom: 0; }
+    tbody tr:hover { background: #fbfdfb; }
+    .cell-main { display: block; color: var(--ink); font-weight: 700; }
+    .cell-sub { display: block; margin-top: 3px; color: var(--muted); font-size: .72rem; }
+    .batch-code { color: var(--brand-700); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .78rem; font-weight: 800; }
+    .progress-wrap { min-width: 142px; }
+    .progress-copy { margin-bottom: 6px; display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: .7rem; }
+    .progress-copy strong { color: var(--ink); }
+    .progress-track { height: 7px; overflow: hidden; background: #e7ede9; border-radius: 999px; }
+    .progress-fill { height: 100%; background: var(--green); border-radius: inherit; }
+    .progress-fill.overdue { background: var(--red); }
+    .badge { width: max-content; padding: 5px 9px; display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; font-size: .69rem; font-weight: 800; white-space: nowrap; }
+    .badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .badge-complete { color: var(--green); background: var(--green-bg); }
+    .badge-overdue { color: var(--red); background: var(--red-bg); }
+    .badge-progress { color: var(--blue); background: var(--blue-bg); }
+    .empty-state { padding: 58px 20px; text-align: center; color: var(--muted); }
+    .empty-icon { width: 48px; height: 48px; margin: 0 auto 13px; display: grid; place-items: center; color: var(--brand-700); background: var(--brand-50); border-radius: 15px; }
+    .empty-state strong { display: block; color: var(--ink); }
+    .empty-state p { margin: 5px 0 0; font-size: .83rem; }
+    .skeleton-row td { padding-top: 18px; padding-bottom: 18px; }
+    .skeleton { height: 12px; border-radius: 5px; background: linear-gradient(90deg, #e8eee9 25%, #f6f8f6 50%, #e8eee9 75%); background-size: 200% 100%; animation: shimmer 1.3s infinite; }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+
+    .create-layout { display: grid; grid-template-columns: minmax(0, 1.38fr) minmax(300px, .62fr); gap: 18px; align-items: start; }
+    .form-panel { overflow: hidden; }
+    .form-section { padding: 22px; border-bottom: 1px solid var(--line); }
+    .form-section:last-child { border-bottom: 0; }
+    .section-title { margin-bottom: 17px; display: flex; align-items: flex-start; gap: 12px; }
+    .section-num { width: 30px; height: 30px; display: grid; place-items: center; color: var(--brand-900); background: var(--lime); border-radius: 9px; font-size: .75rem; font-weight: 900; }
+    .section-title h2 { margin: 1px 0 0; font-size: 1rem; }
+    .section-title p { margin: 3px 0 0; color: var(--muted); font-size: .75rem; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .form-grid .span-2 { grid-column: span 2; }
+    .form-footer { padding: 18px 22px; display: flex; justify-content: flex-end; gap: 10px; background: #fbfdfb; }
+    .summary-card { position: sticky; top: 91px; overflow: hidden; }
+    .summary-top { padding: 21px; color: #fff; background: var(--brand-900); }
+    .summary-top .eyebrow { margin-bottom: 8px; color: var(--lime); }
+    .summary-top h2 { margin: 0; font-size: 1.12rem; }
+    .summary-top p { margin: 6px 0 0; color: rgba(255,255,255,.62); font-size: .76rem; }
+    .summary-list { margin: 0; padding: 7px 20px 16px; }
+    .summary-row { padding: 12px 0; display: flex; justify-content: space-between; gap: 14px; border-bottom: 1px solid var(--line); }
+    .summary-row:last-child { border-bottom: 0; }
+    .summary-row dt { color: var(--muted); font-size: .75rem; }
+    .summary-row dd { margin: 0; max-width: 60%; text-align: right; font-size: .78rem; font-weight: 800; overflow-wrap: anywhere; }
+    .cart-box { margin: 0 20px 20px; padding: 15px; color: var(--brand-900); background: var(--brand-50); border: 1px solid #d4eadc; border-radius: 12px; }
+    .cart-head { display: flex; justify-content: space-between; gap: 12px; }
+    .cart-head strong { font-size: .85rem; }
+    .cart-count { min-width: 25px; height: 25px; display: grid; place-items: center; color: #fff; background: var(--brand-800); border-radius: 50%; font-size: .7rem; font-weight: 900; }
+    .cart-box p { margin: 5px 0 13px; color: var(--muted); font-size: .72rem; }
+
+    .settings-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 18px; align-items: start; }
+    .settings-form { padding: 22px; }
+    .settings-form h2 { margin: 0 0 4px; font-size: 1.1rem; }
+    .settings-form > p { margin: 0 0 20px; color: var(--muted); font-size: .8rem; }
+    .settings-fields { display: grid; gap: 16px; }
+    .notice-card { padding: 20px; border-color: #f0ddbd; background: #fffaf1; }
+    .notice-card .notice-icon { width: 38px; height: 38px; display: grid; place-items: center; color: var(--amber); background: var(--amber-bg); border-radius: 11px; }
+    .notice-card h2 { margin: 14px 0 6px; font-size: .95rem; }
+    .notice-card p { margin: 0; color: #745c39; font-size: .76rem; }
+
+    .toast-region { position: fixed; z-index: 200; right: 18px; bottom: 18px; width: min(390px, calc(100vw - 36px)); display: grid; gap: 10px; pointer-events: none; }
+    .toast { padding: 13px 14px; display: flex; align-items: flex-start; gap: 10px; color: #fff; background: var(--brand-950); border: 1px solid rgba(255,255,255,.12); border-radius: 12px; box-shadow: var(--shadow-lg); animation: toastIn .22s ease both; pointer-events: auto; }
+    .toast.error { background: #722d2d; }
+    .toast.success { background: var(--brand-800); }
+    .toast .icon { margin-top: 2px; }
+    .toast strong { display: block; font-size: .82rem; }
+    .toast span { display: block; margin-top: 2px; color: rgba(255,255,255,.72); font-size: .72rem; }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(8px); } }
+
+    .print-screen { min-height: 100vh; padding: 24px; background: #dfe7e1; }
+    .print-toolbar { width: min(100%, 210mm); margin: 0 auto 14px; padding: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--paper); border: 1px solid var(--line-strong); border-radius: 14px; box-shadow: var(--shadow-sm); }
+    .print-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .a4-paper { width: 210mm; min-height: 297mm; margin: 0 auto; padding: 12mm 15mm 16mm; color: #111; background: #fff; box-shadow: 0 16px 46px rgba(25, 48, 36, .15); font-family: "Noto Sans Thai", "Leelawadee UI", Tahoma, sans-serif; }
+    .doc-meta { margin-bottom: 11mm; display: flex; justify-content: space-between; gap: 15px; color: #5f6a63; font-size: 8.5pt; }
+    .doc-head { padding-bottom: 7mm; text-align: center; border-bottom: 2px solid #173d2e; }
+    .doc-mark { display: inline-flex; align-items: center; gap: 8px; color: #173d2e; font-weight: 900; font-size: 9pt; letter-spacing: .06em; }
+    .doc-head h1 { margin: 3mm 0 0; font-size: 17pt; line-height: 1.3; }
+    .doc-info { width: 100%; margin: 7mm 0; border-collapse: separate; border-spacing: 0; border: 1px solid #cad4cd; border-radius: 8px; overflow: hidden; }
+    .doc-info td { padding: 3mm 3.4mm; border-right: 1px solid #e0e6e2; border-bottom: 1px solid #e0e6e2; font-size: 9.5pt; }
+    .doc-info tr:last-child td { border-bottom: 0; }
+    .doc-info td:last-child { border-right: 0; }
+    .doc-info .label { width: 17%; color: #5e6a62; background: #f7faf8; font-size: 8pt; font-weight: 700; }
+    .doc-table { width: 100%; border-collapse: collapse; }
+    .doc-table th, .doc-table td { padding: 2.7mm 2.3mm; border: 1px solid #cad4cd; font-size: 8.5pt; }
+    .doc-table th { color: #fff; background: #173d2e; font-size: 8pt; }
+    .doc-table td:nth-child(1), .doc-table td:nth-child(2), .doc-table td:nth-child(3), .doc-table td:nth-child(4), .doc-table td:nth-child(6) { text-align: center; }
+    .doc-table td:nth-child(5) { min-width: 38mm; }
+    .doc-table .intake td { background: #f4f8f5; font-weight: 700; }
+    .signatures { margin-top: 15mm; display: grid; grid-template-columns: 1fr 1fr; gap: 24mm; page-break-inside: avoid; }
+    .signature { text-align: center; font-size: 9pt; }
+    .signature-line { margin: 18mm auto 2mm; width: 72%; border-top: 1px dotted #555; }
+    .signature p { margin: 1mm 0 0; }
+
+    @media (max-width: 1160px) {
+      .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .filter-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .create-layout, .settings-grid { grid-template-columns: 1fr; }
+      .summary-card { position: static; }
+    }
+
+    @media (max-width: 860px) {
+      :root { --sidebar: 0px; }
+      .login-page { grid-template-columns: 1fr; }
+      .login-brand { min-height: auto; padding: 32px 24px; }
+      .login-story { margin: 70px 0 42px; }
+      .login-story h1 { font-size: clamp(2.1rem, 10vw, 3.25rem); }
+      .login-points { grid-template-columns: 1fr; }
+      .login-points li { display: flex; align-items: center; gap: 10px; }
+      .login-foot { display: none; }
+      .login-panel { padding: 24px; }
+      .login-card { padding: 28px 24px; }
+      .sidebar { display: none; }
+      .main-shell { margin-left: 0; padding-bottom: 74px; }
+      .mobile-bar {
+        position: fixed;
+        inset: auto 0 0;
+        z-index: 40;
+        min-height: 68px;
+        padding: 7px max(10px, env(safe-area-inset-right)) max(7px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+        display: flex;
+        justify-content: space-around;
+        gap: 4px;
+        background: rgba(10, 36, 27, .97);
+        border-top: 1px solid rgba(255,255,255,.1);
+        backdrop-filter: blur(12px);
+      }
+      .mobile-bar .nav-btn { width: auto; min-width: 76px; min-height: 52px; padding: 5px 9px; flex-direction: column; justify-content: center; gap: 2px; font-size: .66rem; text-align: center; }
+      .mobile-bar .nav-btn[aria-current="page"] { box-shadow: inset 0 -3px 0 var(--lime); }
+      .mobile-bar .icon { width: 19px; height: 19px; }
+      .topbar { min-height: 64px; padding: 9px 18px; }
+      .connection-pill, .user-copy { display: none; }
+      .user-chip { padding: 4px; border: 0; background: transparent; }
+      .content { padding: 25px 18px 45px; }
+    }
+
+    @media (max-width: 620px) {
+      .page-head { align-items: flex-start; flex-direction: column; }
+      .page-actions, .page-actions .btn { width: 100%; }
+      .kpi-grid, .filter-panel, .form-grid { grid-template-columns: 1fr; }
+      .form-grid .span-2 { grid-column: auto; }
+      .kpi-card { min-height: 127px; }
+      .hide-mobile { display: none; }
+      th, td { padding: 12px; }
+      .data-panel { margin-left: -18px; margin-right: -18px; border-left: 0; border-right: 0; border-radius: 0; }
+      .form-section { padding: 19px 17px; }
+      .form-footer { padding: 15px 17px; flex-direction: column-reverse; }
+      .form-footer .btn { width: 100%; }
+      .print-screen { padding: 10px; overflow: auto; }
+      .print-toolbar { position: sticky; left: 0; justify-content: flex-start; }
+      .print-toolbar > .btn-secondary span, .print-actions .btn span { display: none; }
+    }
+
+    @media print {
+      @page { size: A4; margin: 0; }
+      body { background: #fff; }
+      .no-print { display: none !important; }
+      .print-screen { min-height: auto; padding: 0; background: #fff; }
+      .a4-paper { width: 210mm; min-height: 297mm; margin: 0; box-shadow: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <svg class="sr-only" aria-hidden="true">
+    <symbol id="i-dashboard" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+    <symbol id="i-syringe" viewBox="0 0 24 24"><path d="m18 2 4 4-4 4-1.5-1.5-5 5"/><path d="m14.5 6.5 3 3M8 10l6 6M3 21l5-5M5 12l7 7M2 22l3-1-2-2-1 3Z"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6 1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 6v5h-5"/><path d="M19 11a8 8 0 1 0 1 5"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></symbol>
+    <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="m3 3 18 18M10.6 6.2A10.6 10.6 0 0 1 12 6c6.5 0 10 6 10 6a16 16 0 0 1-2.2 2.8M6.2 6.2C3.5 8 2 12 2 12s3.5 6 10 6c1.3 0 2.5-.2 3.5-.6M9.9 9.9a3 3 0 0 0 4.2 4.2"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24"><path d="M10 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5M14 8l4 4-4 4M18 12H8"/></symbol>
+    <symbol id="i-print" viewBox="0 0 24 24"><path d="M7 9V3h10v6M7 18H5a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="7" y="14" width="10" height="7"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4 20-7Z"/><path d="M22 2 11 13"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3 2 21h20L12 3Z"/><path d="M12 9v5M12 18h.01"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24"><path d="m21 8-9 5-9-5 9-5 9 5Z"/><path d="m3 8 9 5 9-5v8l-9 5-9-5V8Z"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 4 6v5c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V6l-8-3Z"/><path d="m9 12 2 2 4-5"/></symbol>
+  </svg>
+
+  <div id="bootScreen" class="boot-screen" role="status" aria-live="polite">
+    <div class="boot-mark">
+      <div class="boot-logo">NV</div>
+      <strong>กำลังเตรียม NextVac</strong>
+      <div class="boot-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+    </div>
+  </div>
+
+  <main id="loginPage" class="login-page hidden">
+    <section class="login-brand" aria-labelledby="loginBrandTitle">
+      <div class="login-lockup">
+        <div class="brand-logo">NV</div>
+        <div><strong>NextVac</strong><span>by SVS</span></div>
+      </div>
+      <div class="login-story">
+        <p class="eyebrow">Smart vaccine operations</p>
+        <h1 id="loginBrandTitle">ทุกโปรแกรมวัคซีน<br>ตรงเวลา ตรวจสอบได้</h1>
+        <p>จัดทำแผน ติดตามงาน และแจ้งเตือนทีมฟาร์มผ่าน LINE บนข้อมูลชุดเดียวกัน</p>
+        <ul class="login-points">
+          <li><strong>1 ระบบ</strong><span>ตั้งแต่แผนถึงประวัติ</span></li>
+          <li><strong>Real-time</strong><span>เห็นงานล่าช้าทันที</span></li>
+          <li><strong>Cost-aware</strong><span>รวมข้อความลดโควตา</span></li>
+        </ul>
+      </div>
+      <div class="login-foot">Swine Veterinary Service · Version 2.0</div>
+    </section>
+    <section class="login-panel" aria-labelledby="loginTitle">
+      <div class="login-card">
+        <p class="eyebrow">ยินดีต้อนรับกลับ</p>
+        <h2 id="loginTitle">เข้าสู่ระบบ NextVac</h2>
+        <p>ใช้บัญชีที่ได้รับจากผู้ดูแลระบบ</p>
+        <form id="loginForm" class="login-form" novalidate>
+          <div class="field">
+            <label for="username">ชื่อผู้ใช้งาน</label>
+            <input id="username" name="username" type="text" autocomplete="username" required placeholder="กรอก Username">
+          </div>
+          <div class="field">
+            <label for="password">รหัสผ่าน</label>
+            <div class="input-wrap">
+              <input id="password" name="password" type="password" autocomplete="current-password" required placeholder="กรอกรหัสผ่าน">
+              <button id="toggleLoginPassword" class="input-action" type="button" aria-label="แสดงรหัสผ่าน"><svg class="icon"><use href="#i-eye"/></svg></button>
+            </div>
+          </div>
+          <p id="loginError" class="login-error hidden" role="alert"></p>
+          <button id="loginButton" class="btn btn-primary btn-block" type="submit">
+            <svg class="icon"><use href="#i-lock"/></svg><span>เข้าสู่ระบบ</span>
+          </button>
+        </form>
+        <p class="security-note"><svg class="icon"><use href="#i-shield"/></svg><span>ระบบจะไม่เก็บรหัสผ่านไว้ในอุปกรณ์นี้</span></p>
+      </div>
+    </section>
+  </main>
+
+  <div id="appShell" class="app-shell hidden">
+    <aside class="sidebar no-print">
+      <div class="sidebar-brand">
+        <div class="brand-logo">NV</div>
+        <div><strong>NextVac</strong><span>Operations</span></div>
+      </div>
+      <nav class="sidebar-nav" aria-label="เมนูหลัก">
+        <button class="nav-btn role-vet" type="button" data-view="dashboard" aria-current="page"><svg class="icon"><use href="#i-dashboard"/></svg>ภาพรวมงาน</button>
+        <button class="nav-btn" type="button" data-view="create"><svg class="icon"><use href="#i-syringe"/></svg>สร้างโปรแกรม</button>
+        <button class="nav-btn role-vet" type="button" data-view="settings"><svg class="icon"><use href="#i-settings"/></svg>ตั้งค่าฟาร์ม</button>
+      </nav>
+      <div class="sidebar-meta"><strong>NextVac v2.0</strong><br>Smart Swine Vaccine Management</div>
+    </aside>
+
+    <nav class="mobile-bar no-print" aria-label="เมนูมือถือ">
+      <button class="nav-btn role-vet" type="button" data-view="dashboard" aria-current="page"><svg class="icon"><use href="#i-dashboard"/></svg>ภาพรวม</button>
+      <button class="nav-btn" type="button" data-view="create"><svg class="icon"><use href="#i-syringe"/></svg>สร้างโปรแกรม</button>
+      <button class="nav-btn role-vet" type="button" data-view="settings"><svg class="icon"><use href="#i-settings"/></svg>ตั้งค่า</button>
+    </nav>
+
+    <div class="main-shell no-print">
+      <header class="topbar">
+        <div class="breadcrumb"><span>NextVac /</span><strong id="topbarTitle">ภาพรวมงาน</strong></div>
+        <div class="top-actions">
+          <div id="connectionState" class="connection-pill"><i></i><span>เชื่อมต่อแล้ว</span></div>
+          <div class="user-chip">
+            <div id="userAvatar" class="avatar">NV</div>
+            <div class="user-copy"><strong id="userName">ผู้ใช้งาน</strong><span id="userRole">—</span></div>
+          </div>
+          <button id="logoutButton" class="btn btn-quiet" type="button" aria-label="ออกจากระบบ"><svg class="icon"><use href="#i-logout"/></svg></button>
+        </div>
+      </header>
+
+      <div class="content">
+        <section id="dashboardView" class="view" aria-labelledby="dashboardTitle">
+          <div class="page-head">
+            <div><p class="eyebrow">Operations overview</p><h1 id="dashboardTitle">ภาพรวมโปรแกรมวัคซีน</h1><p>ติดตามความคืบหน้าของแต่ละรุ่น และจัดการงานที่ต้องดำเนินการก่อน</p></div>
+            <div class="page-actions"><button id="refreshDashboard" class="btn btn-secondary" type="button"><svg class="icon"><use href="#i-refresh"/></svg>อัปเดตข้อมูล</button></div>
+          </div>
+          <div class="kpi-grid" aria-label="สรุปตัวชี้วัด">
+            <article class="kpi-card"><div class="kpi-icon"><svg class="icon"><use href="#i-box"/></svg></div><p>รุ่นสุกรทั้งหมด</p><strong id="kpiTotal">0</strong><span>รุ่น</span></article>
+            <article class="kpi-card kpi-progress"><div class="kpi-icon"><svg class="icon"><use href="#i-clock"/></svg></div><p>กำลังดำเนินการ</p><strong id="kpiProgress">0</strong><span>รุ่น</span></article>
+            <article class="kpi-card kpi-overdue"><div class="kpi-icon"><svg class="icon"><use href="#i-alert"/></svg></div><p>มีรายการล่าช้า</p><strong id="kpiOverdue">0</strong><span>รุ่น</span></article>
+            <article class="kpi-card kpi-complete"><div class="kpi-icon"><svg class="icon"><use href="#i-check"/></svg></div><p>เสร็จสิ้น 100%</p><strong id="kpiCompleted">0</strong><span>รุ่น</span></article>
+          </div>
+          <div class="panel filter-panel" aria-label="ตัวกรองข้อมูล">
+            <div class="search-field"><svg class="icon"><use href="#i-search"/></svg><label class="sr-only" for="filterSearch">ค้นหา</label><input id="filterSearch" type="search" placeholder="ค้นหา Batch, ฟาร์ม หรือโรงเรือน"></div>
+            <div><label class="sr-only" for="filterFarm">กรองตามฟาร์ม</label><select id="filterFarm"><option value="">ทุกฟาร์ม</option></select></div>
+            <div><label class="sr-only" for="filterType">กรองตามประเภทสุกร</label><select id="filterType"><option value="">ทุกประเภทสุกร</option></select></div>
+            <div><label class="sr-only" for="filterStatus">กรองตามสถานะ</label><select id="filterStatus"><option value="">ทุกสถานะ</option><option value="In Progress">กำลังดำเนินการ</option><option value="Overdue">ล่าช้า</option><option value="Completed">เสร็จสิ้น</option></select></div>
+          </div>
+          <div class="panel data-panel">
+            <div class="data-head"><strong>รายการรุ่นสุกร</strong><span id="resultCount">0 รายการ</span></div>
+            <div class="table-wrap">
+              <table aria-label="รายการรุ่นสุกร">
+                <thead><tr><th>Batch / วันที่รับเข้า</th><th>ฟาร์ม / โรงเรือน</th><th class="hide-mobile">ประเภท / จำนวน</th><th>ความคืบหน้า</th><th>สถานะ</th></tr></thead>
+                <tbody id="dashboardBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="createView" class="view hidden" aria-labelledby="createTitle">
+          <div class="page-head"><div><p class="eyebrow">Program builder</p><h1 id="createTitle">สร้างโปรแกรมวัคซีน</h1><p>เลือกข้อมูลฟาร์มและรุ่น ระบบจะคำนวณวันทำวัคซีนให้อัตโนมัติ</p></div></div>
+          <div class="create-layout">
+            <form id="programForm" class="panel form-panel" novalidate>
+              <section class="form-section">
+                <div class="section-title"><div class="section-num">01</div><div><h2>ฟาร์มและโปรแกรม</h2><p>ระบบจะแสดงเฉพาะรายการที่บัญชีนี้ได้รับสิทธิ์</p></div></div>
+                <div class="form-grid">
+                  <div class="field"><label for="regionSelect">ภาค</label><select id="regionSelect" required><option value="">เลือกภาค</option></select></div>
+                  <div class="field"><label for="farmSelect">ชื่อฟาร์ม</label><select id="farmSelect" required><option value="">เลือกภาคก่อน</option></select></div>
+                  <div class="field"><label for="swineType">ประเภทสุกร</label><select id="swineType" required><option value="">เลือกประเภทสุกร</option></select></div>
+                  <div class="field"><label for="programSelect">โปรแกรมวัคซีน</label><select id="programSelect" required><option value="">เลือกประเภทสุกรก่อน</option></select></div>
+                </div>
+              </section>
+              <section class="form-section">
+                <div class="section-title"><div class="section-num">02</div><div><h2>ข้อมูลรุ่นสุกร</h2><p>ใช้สำหรับออกรหัส Batch และคำนวณวันปฏิบัติงาน</p></div></div>
+                <div class="form-grid">
+                  <div class="field span-2"><label for="houseName">ชื่อโรงเรือน</label><input id="houseName" type="text" maxlength="80" required placeholder="เช่น โรงเรือน 1 / เล้าขุน 4"></div>
+                  <div class="field"><label for="admissionDate">วันที่รับเข้า</label><input id="admissionDate" type="date" required></div>
+                  <div class="field"><label for="totalQty">จำนวนสุกร (ตัว)</label><input id="totalQty" type="number" min="1" max="100000" inputmode="numeric" required placeholder="เช่น 700"></div>
+                  <div class="field"><label for="pigAge">อายุรับเข้า (สัปดาห์)</label><input id="pigAge" type="number" min="0" max="200" step="1" inputmode="numeric" required placeholder="เช่น 3"></div>
+                </div>
+              </section>
+              <div class="form-footer">
+                <button id="resetProgram" class="btn btn-secondary" type="button">ล้างข้อมูลรุ่น</button>
+                <button id="generateProgram" class="btn btn-primary" type="submit"><svg class="icon"><use href="#i-syringe"/></svg><span>บันทึกและสร้างเอกสาร</span></button>
+              </div>
+            </form>
+
+            <aside class="panel summary-card" aria-label="สรุปรายการที่เลือก">
+              <div class="summary-top"><p class="eyebrow">Live summary</p><h2>สรุปก่อนสร้างเอกสาร</h2><p>ตรวจสอบข้อมูลสำคัญก่อนบันทึกเข้าคิวงาน</p></div>
+              <dl class="summary-list">
+                <div class="summary-row"><dt>ฟาร์ม</dt><dd id="summaryFarm">—</dd></div>
+                <div class="summary-row"><dt>โรงเรือน</dt><dd id="summaryHouse">—</dd></div>
+                <div class="summary-row"><dt>ประเภทสุกร</dt><dd id="summaryType">—</dd></div>
+                <div class="summary-row"><dt>โปรแกรม</dt><dd id="summaryProgram">—</dd></div>
+                <div class="summary-row"><dt>วันรับเข้า</dt><dd id="summaryDate">—</dd></div>
+                <div class="summary-row"><dt>จำนวน</dt><dd id="summaryQty">—</dd></div>
+              </dl>
+              <div class="cart-box">
+                <div class="cart-head"><strong>รายการรอส่งเข้า LINE</strong><span id="cartCount" class="cart-count">0</span></div>
+                <p id="cartFarm">ยังไม่มีโปรแกรมในรายการ</p>
+                <button id="sendCart" class="btn btn-primary btn-block" type="button" disabled><svg class="icon"><use href="#i-send"/></svg>ส่งรายการเข้า LINE</button>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section id="settingsView" class="view hidden" aria-labelledby="settingsTitle">
+          <div class="page-head"><div><p class="eyebrow">Farm access</p><h1 id="settingsTitle">ตั้งค่าบัญชีฟาร์ม</h1><p>ปรับข้อมูลเข้าสู่ระบบหรือเชื่อมกลุ่ม LINE ของฟาร์มในความรับผิดชอบ</p></div></div>
+          <div class="settings-grid">
+            <form id="settingsForm" class="panel settings-form" novalidate>
+              <h2>ข้อมูลที่ต้องการแก้ไข</h2><p>ช่องที่เว้นว่างจะไม่ถูกเปลี่ยนแปลง</p>
+              <div class="settings-fields">
+                <div class="field"><label for="manageFarm">ฟาร์ม</label><select id="manageFarm" required><option value="">เลือกฟาร์ม</option></select></div>
+                <div class="field"><label for="newFarmUser">Username ใหม่</label><input id="newFarmUser" type="text" autocomplete="off" maxlength="80" placeholder="เว้นว่างหากไม่เปลี่ยน"></div>
+                <div class="field"><label for="newFarmPass">Password ใหม่</label><div class="input-wrap"><input id="newFarmPass" type="password" autocomplete="new-password" maxlength="128" placeholder="เว้นว่างหากไม่เปลี่ยน"><button id="toggleFarmPassword" class="input-action" type="button" aria-label="แสดงรหัสผ่าน"><svg class="icon"><use href="#i-eye"/></svg></button></div></div>
+                <div class="field"><label for="newLineId">LINE Group ID</label><input id="newLineId" type="text" autocomplete="off" maxlength="160" placeholder="รหัสที่ขึ้นต้นด้วย C"><p class="field-note">หากมีหลายปลายทาง ให้คั่นด้วยเครื่องหมาย comma</p></div>
+                <button id="saveFarmSettings" class="btn btn-primary" type="submit"><svg class="icon"><use href="#i-check"/></svg><span>บันทึกการเปลี่ยนแปลง</span></button>
+              </div>
+            </form>
+            <aside class="panel notice-card"><div class="notice-icon"><svg class="icon"><use href="#i-alert"/></svg></div><h2>ข้อมูลสำคัญ</h2><p>ควรยืนยันชื่อฟาร์มและกลุ่ม LINE ให้ถูกต้องก่อนบันทึก เพราะการเปลี่ยนปลายทางจะมีผลกับข้อความแจ้งเตือนรอบถัดไป</p></aside>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <section id="printScreen" class="print-screen hidden" aria-label="ตัวอย่างเอกสารโปรแกรมวัคซีน">
+    <div class="print-toolbar no-print">
+      <button id="backFromPrint" class="btn btn-secondary" type="button"><svg class="icon"><use href="#i-back"/></svg><span>กลับไปแก้ไข</span></button>
+      <div class="print-actions">
+        <button id="newBatch" class="btn btn-secondary" type="button"><svg class="icon"><use href="#i-plus"/></svg><span>สร้างรุ่นต่อไป</span></button>
+        <button id="sendCartPrint" class="btn btn-primary" type="button"><svg class="icon"><use href="#i-send"/></svg><span>ส่งเข้า LINE</span></button>
+        <button id="printDocument" class="btn btn-secondary" type="button"><svg class="icon"><use href="#i-print"/></svg><span>พิมพ์ / PDF</span></button>
+      </div>
+    </div>
+    <article class="a4-paper" id="a4Paper">
+      <div class="doc-meta"><span>พิมพ์เมื่อ: <strong id="docPrintDate">—</strong></span><span>รหัสเอกสาร: <strong id="docRef">—</strong></span></div>
+      <header class="doc-head"><div class="doc-mark"><span>NV</span><span>NEXTVAC · SVS</span></div><h1>โปรแกรมวัคซีน: <span id="docProgram">—</span></h1></header>
+      <table class="doc-info" aria-label="ข้อมูลรุ่นสุกร"><tbody>
+        <tr><td class="label">ชื่อฟาร์ม</td><td id="docFarm">—</td><td class="label">ภาค</td><td id="docRegion">—</td></tr>
+        <tr><td class="label">โรงเรือน</td><td id="docHouse">—</td><td class="label">ประเภทสุกร</td><td id="docType">—</td></tr>
+        <tr><td class="label">จำนวน</td><td><span id="docQty">—</span> ตัว</td><td class="label">วันที่รับเข้า</td><td id="docDate">—</td></tr>
+        <tr><td class="label">อายุรับเข้า</td><td><span id="docAge">—</span> สัปดาห์</td><td class="label">Batch ID</td><td id="docBatch">—</td></tr>
+      </tbody></table>
+      <table class="doc-table" aria-label="ตารางโปรแกรมวัคซีน"><thead><tr><th>วันที่</th><th>อายุ (สป.)</th><th>เวชภัณฑ์</th><th>รายละเอียด</th><th>หมายเหตุ</th><th>สถานะ</th></tr></thead><tbody id="docSchedule"></tbody></table>
+      <div class="signatures">
+        <div class="signature"><div class="signature-line"></div><strong>( <span id="docVet">................................</span> )</strong><p>สัตวแพทย์ผู้ควบคุมฟาร์ม</p><p>วันที่ ______ / ______ / ______</p></div>
+        <div class="signature"><div class="signature-line"></div><strong>( <span id="docManager">................................</span> )</strong><p>ผู้จัดการฟาร์ม</p><p>วันที่ ______ / ______ / ______</p></div>
+      </div>
+    </article>
+  </section>
+
+  <div id="toastRegion" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+
+  <script>
+    "use strict";
+
+    const API_URL = document.querySelector('meta[name="nextvac-api-url"]')?.content?.trim() || "";
+    const state = {
+      user: null,
+      master: { regions: {}, programs: [] },
+      dashboard: [],
+      cart: [],
+      cartFarm: "",
+      lastDocument: null,
+      activeView: "dashboard",
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const icon = (name, className = "icon") => {
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("class", className);
+      const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+      use.setAttribute("href", `#i-${name}`);
+      svg.appendChild(use);
+      return svg;
+    };
+
+    function setText(id, value) { $(id).textContent = value ?? "—"; }
+    function setBusy(button, busy, busyText, normalText) {
+      button.disabled = busy;
+      const span = button.querySelector("span") || button;
+      span.textContent = busy ? busyText : normalText;
+      button.setAttribute("aria-busy", String(busy));
+    }
+
+    function toast(title, message = "", type = "success") {
+      const item = document.createElement("div");
+      item.className = `toast ${type}`;
+      item.appendChild(icon(type === "error" ? "alert" : "check"));
+      const copy = document.createElement("div");
+      const strong = document.createElement("strong");
+      const span = document.createElement("span");
+      strong.textContent = title;
+      span.textContent = message;
+      copy.append(strong, span);
+      item.appendChild(copy);
+      $("toastRegion").appendChild(item);
+      window.setTimeout(() => item.remove(), 5200);
+    }
+
+    function setConnection(ok) {
+      const pill = $("connectionState");
+      pill.classList.toggle("hidden", !state.user);
+      pill.style.color = ok ? "var(--green)" : "var(--red)";
+      pill.style.background = ok ? "var(--green-bg)" : "var(--red-bg)";
+      pill.querySelector("span").textContent = ok ? "เชื่อมต่อแล้ว" : "การเชื่อมต่อมีปัญหา";
+    }
+
+    async function request(url, options = {}) {
+      const controller = new AbortController();
+      const timer = window.setTimeout(() => controller.abort(), 20000);
+      try {
+        const response = await fetch(url, { ...options, signal: controller.signal, cache: "no-store" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        setConnection(true);
+        return data;
+      } catch (error) {
+        setConnection(false);
+        if (error.name === "AbortError") throw new Error("เซิร์ฟเวอร์ใช้เวลาตอบกลับนานเกินไป");
+        throw error;
+      } finally {
+        window.clearTimeout(timer);
+      }
+    }
+
+    function apiGet(action) {
+      const url = new URL(API_URL);
+      url.searchParams.set("action", action);
+      url.searchParams.set("_", Date.now().toString());
+      return request(url.toString());
+    }
+
+    function apiPost(payload) {
+      return request(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload),
+      });
+    }
+
+    function togglePassword(input, button) {
+      const showing = input.type === "text";
+      input.type = showing ? "password" : "text";
+      button.replaceChildren(icon(showing ? "eye" : "eye-off"));
+      button.setAttribute("aria-label", showing ? "แสดงรหัสผ่าน" : "ซ่อนรหัสผ่าน");
+    }
+
+    function selectedText(select) {
+      return select.selectedIndex >= 0 && select.value ? select.options[select.selectedIndex].textContent : "—";
+    }
+
+    function addOption(select, label, value, dataset = {}) {
+      const option = new Option(label, value);
+      Object.entries(dataset).forEach(([key, data]) => { option.dataset[key] = data ?? ""; });
+      select.add(option);
+      return option;
+    }
+
+    function resetOptions(select, placeholder) {
+      select.replaceChildren(new Option(placeholder, ""));
+    }
+
+    function parseLocalDate(value) {
+      if (value instanceof Date) return new Date(value.getTime());
+      if (typeof value === "number") {
+        const utc = new Date(Date.UTC(1899, 11, 30) + value * 86400000);
+        return new Date(utc.getUTCFullYear(), utc.getUTCMonth(), utc.getUTCDate());
+      }
+      const stringValue = String(value || "").trim();
+      const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(stringValue);
+      if (dateOnly) return new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3]));
+      return new Date(stringValue);
+    }
+
+    function toLocalIso(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function formatThaiDate(value, long = false) {
+      if (!value) return "—";
+      const date = parseLocalDate(value);
+      if (Number.isNaN(date.getTime())) return "—";
+      const month = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."][date.getMonth()];
+      const day = date.getDate();
+      const year = date.getFullYear() + 543;
+      if (!long) return `${String(day).padStart(2, "0")} ${month} ${String(year).slice(-2)}`;
+      const weekday = ["อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์", "เสาร์"][date.getDay()];
+      return `วัน${weekday}ที่ ${day} ${month} ${year}`;
+    }
+
+    function safeId(prefix) {
+      const raw = globalThis.crypto?.randomUUID?.().replaceAll("-", "") || `${Date.now()}${Math.random().toString(16).slice(2)}`;
+      return `${prefix}-${raw.slice(0, 12).toUpperCase()}`;
+    }
+
+    function displayName(user) {
+      if (user.role === "Vet") return user.vetName || user.username;
+      if (user.role === "Farm") return user.farmName || user.username;
+      return user.vetName || user.username;
+    }
+
+    function roleLabel(role) {
+      return ({ Admin: "ผู้ดูแลระบบ", Vet: "สัตวแพทย์", Farm: "ผู้ใช้งานฟาร์ม" })[role] || role;
+    }
+
+    async function handleLogin(event) {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const username = $("username");
+      const password = $("password");
+      const errorBox = $("loginError");
+      errorBox.classList.add("hidden");
+      [username, password].forEach((field) => field.setAttribute("aria-invalid", String(!field.value.trim())));
+      if (!form.checkValidity()) { form.reportValidity(); return; }
+
+      setBusy($("loginButton"), true, "กำลังตรวจสอบ...", "เข้าสู่ระบบ");
+      try {
+        const login = await apiPost({ action: "login", username: username.value.trim(), password: password.value });
+        if (login.status !== "success" || !login.user) throw new Error(login.message || "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
+        state.user = login.user;
+        const [regions, programs] = await Promise.all([apiGet("getRegionsAndFarms"), apiGet("getPrograms")]);
+        if (regions.status !== "success" || programs.status !== "success") throw new Error("ไม่สามารถโหลดข้อมูลหลักของระบบได้");
+        state.master.regions = regions.data || {};
+        state.master.programs = programs.data || [];
+        password.value = "";
+        setupApplication();
+      } catch (error) {
+        state.user = null;
+        errorBox.textContent = error.message || "ไม่สามารถเชื่อมต่อระบบได้ กรุณาลองใหม่";
+        errorBox.classList.remove("hidden");
+      } finally {
+        setBusy($("loginButton"), false, "กำลังตรวจสอบ...", "เข้าสู่ระบบ");
+      }
+    }
+
+    function setupApplication() {
+      const user = state.user;
+      const name = displayName(user);
+      setText("userName", name);
+      setText("userRole", roleLabel(user.role));
+      setText("userAvatar", (name || "NV").replace(/^(น\.สพ\.|สพ\.ญ\.)/, "").trim().slice(0, 2).toUpperCase());
+      document.querySelectorAll(".role-vet").forEach((node) => node.classList.toggle("hidden", user.role === "Farm"));
+      populateProgramMaster();
+      populateManageFarms();
+      $("loginPage").classList.add("hidden");
+      $("appShell").classList.remove("hidden");
+      switchView(user.role === "Farm" ? "create" : "dashboard");
+      toast("เข้าสู่ระบบสำเร็จ", `ยินดีต้อนรับ ${name}`);
+    }
+
+    function populateProgramMaster() {
+      const regionSelect = $("regionSelect");
+      const farmSelect = $("farmSelect");
+      const typeSelect = $("swineType");
+      resetOptions(regionSelect, "เลือกภาค");
+      resetOptions(farmSelect, "เลือกภาคก่อน");
+      resetOptions(typeSelect, "เลือกประเภทสุกร");
+
+      [...new Set(state.master.programs.map((row) => String(row.type || "").trim()).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b, "th"))
+        .forEach((type) => addOption(typeSelect, type, type));
+
+      if (state.user.role === "Farm") {
+        addOption(regionSelect, state.user.region, state.user.region);
+        addOption(farmSelect, state.user.farmName, state.user.farmName, { vet: state.user.vetName, manager: state.user.managerName });
+        regionSelect.value = state.user.region;
+        farmSelect.value = state.user.farmName;
+        regionSelect.disabled = true;
+        farmSelect.disabled = true;
+      } else {
+        regionSelect.disabled = false;
+        farmSelect.disabled = false;
+        const regions = Object.keys(state.master.regions).filter((region) => {
+          if (state.user.role === "Admin") return true;
+          return state.master.regions[region].some((farm) => String(farm.vet || "").trim() === String(state.user.vetName || "").trim());
+        });
+        regions.sort((a, b) => a.localeCompare(b, "th")).forEach((region) => addOption(regionSelect, region, region));
+      }
+      updatePrograms();
+      updateSummary();
+    }
+
+    function populateFarms() {
+      if (state.user.role === "Farm") return;
+      const region = $("regionSelect").value;
+      resetOptions($("farmSelect"), region ? "เลือกฟาร์ม" : "เลือกภาคก่อน");
+      const farms = state.master.regions[region] || [];
+      farms.filter((farm) => state.user.role === "Admin" || String(farm.vet || "").trim() === String(state.user.vetName || "").trim())
+        .sort((a, b) => String(a.name).localeCompare(String(b.name), "th"))
+        .forEach((farm) => addOption($("farmSelect"), farm.name, farm.name, { vet: farm.vet, manager: farm.manager }));
+      updatePrograms();
+      updateSummary();
+    }
+
+    function updatePrograms() {
+      const type = String($("swineType").value || "").trim();
+      const farm = String($("farmSelect").value || "").trim();
+      const region = String($("regionSelect").value || "").trim();
+      resetOptions($("programSelect"), type ? "เลือกโปรแกรมวัคซีน" : "เลือกประเภทสุกรก่อน");
+      const seen = new Set();
+      state.master.programs
+        .filter((row) => String(row.type || "").trim() === type && ["Global", farm, region].includes(String(row.owner || "").trim()))
+        .forEach((row) => {
+          const id = String(row.id || "").trim();
+          if (id && !seen.has(id)) { seen.add(id); addOption($("programSelect"), row.name || id, id); }
+        });
+      updateSummary();
+    }
+
+    function populateManageFarms() {
+      resetOptions($("manageFarm"), "เลือกฟาร์ม");
+      if (state.user.role === "Farm") return;
+      const items = [];
+      Object.values(state.master.regions).flat().forEach((farm) => {
+        if (state.user.role === "Admin" || String(farm.vet || "").trim() === String(state.user.vetName || "").trim()) items.push(farm.name);
+      });
+      [...new Set(items)].sort((a, b) => String(a).localeCompare(String(b), "th")).forEach((farm) => addOption($("manageFarm"), farm, farm));
+    }
+
+    function updateSummary() {
+      setText("summaryFarm", selectedText($("farmSelect")));
+      setText("summaryHouse", $("houseName").value.trim() || "—");
+      setText("summaryType", selectedText($("swineType")));
+      setText("summaryProgram", selectedText($("programSelect")));
+      setText("summaryDate", $("admissionDate").value ? formatThaiDate($("admissionDate").value, true) : "—");
+      setText("summaryQty", $("totalQty").value ? `${Number($("totalQty").value).toLocaleString("th-TH")} ตัว` : "—");
+    }
+
+    function switchView(viewName) {
+      if (state.user?.role === "Farm" && viewName !== "create") viewName = "create";
+      state.activeView = viewName;
+      const names = { dashboard: "ภาพรวมงาน", create: "สร้างโปรแกรม", settings: "ตั้งค่าฟาร์ม" };
+      ["dashboard", "create", "settings"].forEach((name) => $(`${name}View`).classList.toggle("hidden", name !== viewName));
+      document.querySelectorAll("[data-view]").forEach((button) => {
+        if (button.dataset.view === viewName) button.setAttribute("aria-current", "page");
+        else button.removeAttribute("aria-current");
+      });
+      setText("topbarTitle", names[viewName]);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      if (viewName === "dashboard") loadDashboard();
+    }
+
+    function showDashboardSkeleton() {
+      const body = $("dashboardBody");
+      body.replaceChildren();
+      for (let i = 0; i < 5; i += 1) {
+        const row = document.createElement("tr");
+        row.className = "skeleton-row";
+        for (let c = 0; c < 5; c += 1) {
+          const cell = document.createElement("td");
+          const bar = document.createElement("div");
+          bar.className = "skeleton";
+          bar.style.width = `${58 + ((i + c) % 4) * 10}%`;
+          cell.appendChild(bar);
+          row.appendChild(cell);
+        }
+        body.appendChild(row);
+      }
+    }
+
+    async function loadDashboard() {
+      showDashboardSkeleton();
+      $("refreshDashboard").disabled = true;
+      try {
+        const data = await apiGet("getDashboardData");
+        if (data.status !== "success") throw new Error(data.message || "โหลดข้อมูลไม่สำเร็จ");
+        state.dashboard = Array.isArray(data.data) ? data.data : [];
+        populateDashboardFilters();
+        applyDashboardFilters();
+      } catch (error) {
+        renderEmptyDashboard("ไม่สามารถโหลดข้อมูลได้", error.message || "กรุณาลองอีกครั้ง");
+        toast("โหลดข้อมูลไม่สำเร็จ", error.message || "กรุณาลองอีกครั้ง", "error");
+      } finally {
+        $("refreshDashboard").disabled = false;
+      }
+    }
+
+    function allowedDashboardItems() {
+      return state.dashboard.filter((item) => {
+        if (state.user.role === "Vet") return String(item.vetName || "").trim() === String(state.user.vetName || "").trim();
+        if (state.user.role === "Farm") return String(item.farmName || "").trim() === String(state.user.farmName || "").trim();
+        return true;
+      });
+    }
+
+    function populateDashboardFilters() {
+      const items = allowedDashboardItems();
+      const currentFarm = $("filterFarm").value;
+      const currentType = $("filterType").value;
+      resetOptions($("filterFarm"), "ทุกฟาร์ม");
+      resetOptions($("filterType"), "ทุกประเภทสุกร");
+      [...new Set(items.map((item) => item.farmName).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b), "th")).forEach((value) => addOption($("filterFarm"), value, value));
+      [...new Set(items.map((item) => item.swineType).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b), "th")).forEach((value) => addOption($("filterType"), value, value));
+      if ([...$("filterFarm").options].some((option) => option.value === currentFarm)) $("filterFarm").value = currentFarm;
+      if ([...$("filterType").options].some((option) => option.value === currentType)) $("filterType").value = currentType;
+    }
+
+    function applyDashboardFilters() {
+      const search = $("filterSearch").value.trim().toLocaleLowerCase("th");
+      const farm = $("filterFarm").value;
+      const type = $("filterType").value;
+      const status = $("filterStatus").value;
+      const filtered = allowedDashboardItems().filter((item) => {
+        const haystack = [item.batchId, item.farmName, item.houseName, item.swineType].join(" ").toLocaleLowerCase("th");
+        return (!search || haystack.includes(search)) && (!farm || item.farmName === farm) && (!type || item.swineType === type) && (!status || item.status === status);
+      });
+      renderDashboard(filtered);
+    }
+
+    function renderEmptyDashboard(title, detail) {
+      const body = $("dashboardBody");
+      const row = document.createElement("tr");
+      const cell = document.createElement("td");
+      cell.colSpan = 5;
+      const box = document.createElement("div");
+      box.className = "empty-state";
+      const visual = document.createElement("div");
+      visual.className = "empty-icon";
+      visual.appendChild(icon("search", "icon icon-lg"));
+      const strong = document.createElement("strong");
+      const p = document.createElement("p");
+      strong.textContent = title;
+      p.textContent = detail;
+      box.append(visual, strong, p);
+      cell.appendChild(box);
+      row.appendChild(cell);
+      body.replaceChildren(row);
+      setText("resultCount", "0 รายการ");
+      ["kpiTotal", "kpiProgress", "kpiOverdue", "kpiCompleted"].forEach((id) => setText(id, "0"));
+    }
+
+    function statusInfo(status) {
+      if (status === "Completed") return { label: "เสร็จสิ้น", className: "badge-complete" };
+      if (status === "Overdue") return { label: "ล่าช้า", className: "badge-overdue" };
+      return { label: "กำลังดำเนินการ", className: "badge-progress" };
+    }
+
+    function appendCopy(cell, main, sub, mainClass = "cell-main") {
+      const primary = document.createElement("span");
+      const secondary = document.createElement("span");
+      primary.className = mainClass;
+      secondary.className = "cell-sub";
+      primary.textContent = main ?? "—";
+      secondary.textContent = sub ?? "—";
+      cell.append(primary, secondary);
+    }
+
+    function renderDashboard(items) {
+      if (!items.length) { renderEmptyDashboard("ไม่พบข้อมูลตามเงื่อนไข", "ลองเปลี่ยนคำค้นหาหรือตัวกรอง"); return; }
+      const body = $("dashboardBody");
+      body.replaceChildren();
+      let completed = 0;
+      let overdue = 0;
+      let progress = 0;
+      items.forEach((item) => {
+        if (item.status === "Completed") completed += 1;
+        else if (item.status === "Overdue") overdue += 1;
+        else progress += 1;
+        const row = document.createElement("tr");
+        const batchCell = document.createElement("td");
+        const farmCell = document.createElement("td");
+        const typeCell = document.createElement("td");
+        const progressCell = document.createElement("td");
+        const statusCell = document.createElement("td");
+        typeCell.className = "hide-mobile";
+        appendCopy(batchCell, item.batchId, `รับเข้า ${formatThaiDate(item.admDate)}`, "batch-code");
+        appendCopy(farmCell, item.farmName, item.houseName || "ไม่ระบุโรงเรือน");
+        appendCopy(typeCell, item.swineType, `${Number(item.qty || 0).toLocaleString("th-TH")} ตัว`);
+        const wrap = document.createElement("div");
+        wrap.className = "progress-wrap";
+        const copy = document.createElement("div");
+        copy.className = "progress-copy";
+        const count = document.createElement("span");
+        const percent = document.createElement("strong");
+        count.textContent = `${Number(item.doneTasks || 0)}/${Number(item.totalTasks || 0)} งาน`;
+        const safeProgress = Math.max(0, Math.min(100, Number(item.progress || 0)));
+        percent.textContent = `${safeProgress}%`;
+        copy.append(count, percent);
+        const track = document.createElement("div");
+        track.className = "progress-track";
+        const fill = document.createElement("div");
+        fill.className = `progress-fill${item.status === "Overdue" ? " overdue" : ""}`;
+        fill.style.width = `${safeProgress}%`;
+        track.appendChild(fill);
+        wrap.append(copy, track);
+        progressCell.appendChild(wrap);
+        const status = statusInfo(item.status);
+        const badge = document.createElement("span");
+        badge.className = `badge ${status.className}`;
+        badge.textContent = status.label;
+        statusCell.appendChild(badge);
+        row.append(batchCell, farmCell, typeCell, progressCell, statusCell);
+        body.appendChild(row);
+      });
+      setText("resultCount", `${items.length.toLocaleString("th-TH")} รายการ`);
+      setText("kpiTotal", items.length.toLocaleString("th-TH"));
+      setText("kpiProgress", progress.toLocaleString("th-TH"));
+      setText("kpiOverdue", overdue.toLocaleString("th-TH"));
+      setText("kpiCompleted", completed.toLocaleString("th-TH"));
+    }
+
+    function validateProgramForm() {
+      const form = $("programForm");
+      [...form.elements].forEach((field) => {
+        if (field instanceof HTMLInputElement || field instanceof HTMLSelectElement) field.setAttribute("aria-invalid", String(!field.checkValidity()));
+      });
+      if (!form.checkValidity()) { form.reportValidity(); return false; }
+      const programRows = state.master.programs.filter((row) => String(row.id || "").trim() === $("programSelect").value);
+      if (!programRows.length) { toast("ไม่พบข้อมูลโปรแกรม", "กรุณาเลือกโปรแกรมใหม่อีกครั้ง", "error"); return false; }
+      return true;
+    }
+
+    function buildProgramPayload() {
+      const farmOption = $("farmSelect").options[$("farmSelect").selectedIndex];
+      const farm = $("farmSelect").value.trim();
+      const region = $("regionSelect").value.trim();
+      const swineType = $("swineType").value.trim();
+      const programId = $("programSelect").value.trim();
+      const programName = selectedText($("programSelect"));
+      const house = $("houseName").value.trim();
+      const admissionValue = $("admissionDate").value;
+      const admissionDate = parseLocalDate(admissionValue);
+      const quantity = Number($("totalQty").value);
+      const initialAge = Number($("pigAge").value);
+      const batchId = `B-${toLocalIso(new Date()).replaceAll("-", "")}-${safeId("").replaceAll("-", "").slice(0, 6)}`;
+      const rows = state.master.programs
+        .filter((row) => String(row.id || "").trim() === programId)
+        .sort((a, b) => Number(a.offset || 0) - Number(b.offset || 0));
+      const schedule = [{ date: admissionDate, age: initialAge, vacType: "—", tradeName: "—", note: "รับเข้าสุกร", vaccineName: "รับเข้าสุกร", intake: true }];
+      const tasks = [];
+      rows.forEach((row) => {
+        const target = new Date(admissionDate.getTime());
+        target.setDate(target.getDate() + Number(row.offset || 0));
+        const vacType = String(row.vacType || "—").trim();
+        const tradeName = String(row.tradeName || "").trim();
+        const vaccineName = tradeName ? `${vacType} (${tradeName})` : vacType;
+        const age = Math.floor(initialAge + Number(row.offset || 0) / 7);
+        schedule.push({ date: target, age, vacType, tradeName: tradeName || "—", note: row.note || "", vaccineName, intake: false });
+        tasks.push({ taskId: safeId("TK"), farmName: farm, swineType, targetDate: toLocalIso(target), vaccineName });
+      });
+      return {
+        farm,
+        region,
+        swineType,
+        programId,
+        programName,
+        house,
+        admissionValue,
+        admissionDate,
+        quantity,
+        initialAge,
+        batchId,
+        vet: farmOption?.dataset.vet || state.user.vetName || "",
+        manager: farmOption?.dataset.manager || state.user.managerName || "",
+        schedule,
+        tasks,
+      };
+    }
+
+    async function generateProgram(event) {
+      event.preventDefault();
+      if (!validateProgramForm()) return;
+      const documentData = buildProgramPayload();
+      if (state.cart.length && state.cartFarm && state.cartFarm !== documentData.farm) {
+        const proceed = window.confirm(`รายการรอส่งปัจจุบันเป็นของ ${state.cartFarm}\nหากเปลี่ยนเป็น ${documentData.farm} รายการเดิมจะถูกล้าง ต้องการดำเนินการต่อหรือไม่?`);
+        if (!proceed) return;
+        state.cart = [];
+        state.cartFarm = "";
+      }
+      setBusy($("generateProgram"), true, "กำลังบันทึก...", "บันทึกและสร้างเอกสาร");
+      try {
+        const saved = await apiPost({
+          action: "saveTasks",
+          batchInfo: {
+            batchId: documentData.batchId,
+            farmName: documentData.farm,
+            region: documentData.region,
+            type: documentData.swineType,
+            qty: documentData.quantity,
+            admDate: documentData.admissionValue,
+            vetName: documentData.vet,
+            houseName: documentData.house,
+          },
+          tasks: documentData.tasks,
+        });
+        if (saved.status !== "success") throw new Error(saved.message || "ไม่สามารถบันทึกคิวงานได้");
+        state.cartFarm = documentData.farm;
+        state.cart.push({
+          summaryInfo: {
+            type: documentData.swineType,
+            qty: documentData.quantity,
+            admDate: formatThaiDate(documentData.admissionDate),
+            batchId: documentData.batchId,
+            houseName: documentData.house,
+          },
+          scheduleData: documentData.schedule.map((row) => ({ date: formatThaiDate(row.date), age: row.age, vac: row.vaccineName })),
+        });
+        state.lastDocument = documentData;
+        updateCartUi();
+        renderDocument(documentData);
+        showPrintScreen();
+        toast("บันทึกโปรแกรมแล้ว", `Batch ${documentData.batchId} ถูกเพิ่มเข้าคิวงาน`);
+      } catch (error) {
+        toast("บันทึกโปรแกรมไม่สำเร็จ", error.message || "กรุณาลองอีกครั้ง", "error");
+      } finally {
+        setBusy($("generateProgram"), false, "กำลังบันทึก...", "บันทึกและสร้างเอกสาร");
+      }
+    }
+
+    function renderDocument(data) {
+      const now = new Date();
+      setText("docPrintDate", `${formatThaiDate(now)} ${now.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })}`);
+      setText("docRef", `REF-${toLocalIso(now).replaceAll("-", "")}-${safeId("").replaceAll("-", "").slice(0, 6)}`);
+      setText("docProgram", data.programName);
+      setText("docFarm", data.farm);
+      setText("docRegion", data.region);
+      setText("docHouse", data.house);
+      setText("docType", data.swineType);
+      setText("docQty", data.quantity.toLocaleString("th-TH"));
+      setText("docDate", formatThaiDate(data.admissionDate, true));
+      setText("docAge", data.initialAge.toLocaleString("th-TH"));
+      setText("docBatch", data.batchId);
+      setText("docVet", data.vet || "................................");
+      setText("docManager", data.manager || "................................");
+      const body = $("docSchedule");
+      body.replaceChildren();
+      let previousDate = "";
+      data.schedule.forEach((item) => {
+        const row = document.createElement("tr");
+        if (item.intake) row.className = "intake";
+        const values = [
+          formatThaiDate(item.date) === previousDate ? "" : formatThaiDate(item.date),
+          item.age,
+          item.vacType,
+          item.tradeName,
+          item.note || "",
+          "",
+        ];
+        values.forEach((value) => {
+          const cell = document.createElement("td");
+          cell.textContent = value;
+          row.appendChild(cell);
+        });
+        previousDate = formatThaiDate(item.date);
+        body.appendChild(row);
+      });
+      document.title = `${data.farm}_${data.house}_${data.swineType}_${formatThaiDate(data.admissionDate).replaceAll(" ", "-")}`;
+    }
+
+    function showPrintScreen() {
+      $("appShell").classList.add("hidden");
+      $("printScreen").classList.remove("hidden");
+      window.scrollTo(0, 0);
+    }
+
+    function hidePrintScreen() {
+      $("printScreen").classList.add("hidden");
+      $("appShell").classList.remove("hidden");
+      document.title = "NextVac | Smart Swine Vaccine Management";
+      window.scrollTo(0, 0);
+    }
+
+    function resetBatchFields() {
+      ["houseName", "totalQty"].forEach((id) => { $(id).value = ""; $(id).removeAttribute("aria-invalid"); });
+      updateSummary();
+    }
+
+    function updateCartUi() {
+      const count = state.cart.length;
+      setText("cartCount", count.toLocaleString("th-TH"));
+      setText("cartFarm", count ? `${state.cartFarm} · ${count.toLocaleString("th-TH")} โปรแกรม` : "ยังไม่มีโปรแกรมในรายการ");
+      $("sendCart").disabled = count === 0;
+      $("sendCartPrint").disabled = count === 0;
+      const label = count ? `ส่ง ${count.toLocaleString("th-TH")} รายการเข้า LINE` : "ส่งรายการเข้า LINE";
+      $("sendCart").lastChild.textContent = label;
+      $("sendCartPrint").querySelector("span").textContent = label;
+    }
+
+    async function sendCart(sourceButton) {
+      if (!state.cart.length || !state.cartFarm) return;
+      const buttons = [$("sendCart"), $("sendCartPrint")];
+      buttons.forEach((button) => { button.disabled = true; });
+      const original = sourceButton.querySelector("span")?.textContent || sourceButton.textContent;
+      const label = sourceButton.querySelector("span") || sourceButton;
+      label.textContent = "กำลังส่ง...";
+      try {
+        const result = await apiPost({ action: "sendScheduleCard", farmName: state.cartFarm, cart: state.cart });
+        if (result.status !== "success") throw new Error(result.message || "ระบบส่งข้อความไม่สำเร็จ");
+        const count = state.cart.length;
+        state.cart = [];
+        state.cartFarm = "";
+        updateCartUi();
+        toast("ส่งเข้า LINE สำเร็จ", `ส่งโปรแกรม ${count.toLocaleString("th-TH")} รายการแล้ว`);
+      } catch (error) {
+        toast("ส่งเข้า LINE ไม่สำเร็จ", error.message || "กรุณาลองอีกครั้ง", "error");
+        updateCartUi();
+      } finally {
+        label.textContent = original;
+        updateCartUi();
+      }
+    }
+
+    async function saveFarmSettings(event) {
+      event.preventDefault();
+      const farm = $("manageFarm").value;
+      const newUsername = $("newFarmUser").value.trim();
+      const newPassword = $("newFarmPass").value;
+      const newLineId = $("newLineId").value.trim();
+      $("manageFarm").setAttribute("aria-invalid", String(!farm));
+      if (!farm) { $("settingsForm").reportValidity(); return; }
+      if (!newUsername && !newPassword && !newLineId) { toast("ยังไม่มีข้อมูลที่เปลี่ยน", "กรอกอย่างน้อย 1 ช่องก่อนบันทึก", "error"); return; }
+      if (newLineId && !newLineId.split(",").every((id) => /^[CU][a-fA-F0-9]{20,}$/.test(id.trim()))) {
+        $("newLineId").setAttribute("aria-invalid", "true");
+        toast("รูปแบบ LINE ID ไม่ถูกต้อง", "ตรวจสอบรหัสแต่ละรายการและเครื่องหมาย comma", "error");
+        return;
+      }
+      setBusy($("saveFarmSettings"), true, "กำลังบันทึก...", "บันทึกการเปลี่ยนแปลง");
+      try {
+        const result = await apiPost({ action: "updateFarmByVet", targetFarm: farm, newUsername, newPassword, newLineId });
+        if (result.status !== "success") throw new Error(result.message || "ไม่สามารถอัปเดตข้อมูลได้");
+        ["newFarmUser", "newFarmPass", "newLineId"].forEach((id) => { $(id).value = ""; $(id).removeAttribute("aria-invalid"); });
+        toast("บันทึกข้อมูลฟาร์มแล้ว", `${farm} ถูกอัปเดตเรียบร้อย`);
+      } catch (error) {
+        toast("บันทึกข้อมูลไม่สำเร็จ", error.message || "กรุณาลองอีกครั้ง", "error");
+      } finally {
+        setBusy($("saveFarmSettings"), false, "กำลังบันทึก...", "บันทึกการเปลี่ยนแปลง");
+      }
+    }
+
+    function logout() {
+      state.user = null;
+      state.master = { regions: {}, programs: [] };
+      state.dashboard = [];
+      state.cart = [];
+      state.cartFarm = "";
+      state.lastDocument = null;
+      $("appShell").classList.add("hidden");
+      $("printScreen").classList.add("hidden");
+      $("loginPage").classList.remove("hidden");
+      $("loginForm").reset();
+      $("programForm").reset();
+      $("settingsForm").reset();
+      $("username").focus();
+      document.title = "NextVac | Smart Swine Vaccine Management";
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      window.setTimeout(() => { $("bootScreen").classList.add("hidden"); $("loginPage").classList.remove("hidden"); $("username").focus(); }, 450);
+      $("loginForm").addEventListener("submit", handleLogin);
+      $("toggleLoginPassword").addEventListener("click", () => togglePassword($("password"), $("toggleLoginPassword")));
+      $("toggleFarmPassword").addEventListener("click", () => togglePassword($("newFarmPass"), $("toggleFarmPassword")));
+      $("logoutButton").addEventListener("click", logout);
+      document.querySelectorAll("[data-view]").forEach((button) => button.addEventListener("click", () => switchView(button.dataset.view)));
+      $("refreshDashboard").addEventListener("click", loadDashboard);
+      ["filterSearch", "filterFarm", "filterType", "filterStatus"].forEach((id) => $(id).addEventListener(id === "filterSearch" ? "input" : "change", applyDashboardFilters));
+      $("regionSelect").addEventListener("change", populateFarms);
+      $("swineType").addEventListener("change", updatePrograms);
+      $("farmSelect").addEventListener("change", updatePrograms);
+      ["regionSelect", "farmSelect", "swineType", "programSelect", "houseName", "admissionDate", "totalQty", "pigAge"].forEach((id) => {
+        $(id).addEventListener("input", updateSummary);
+        $(id).addEventListener("change", updateSummary);
+      });
+      $("programForm").addEventListener("submit", generateProgram);
+      $("resetProgram").addEventListener("click", resetBatchFields);
+      $("sendCart").addEventListener("click", () => sendCart($("sendCart")));
+      $("sendCartPrint").addEventListener("click", () => sendCart($("sendCartPrint")));
+      $("backFromPrint").addEventListener("click", hidePrintScreen);
+      $("newBatch").addEventListener("click", () => { hidePrintScreen(); resetBatchFields(); $("houseName").focus(); });
+      $("printDocument").addEventListener("click", () => window.print());
+      $("settingsForm").addEventListener("submit", saveFarmSettings);
+      $("admissionDate").max = "2100-12-31";
+      updateCartUi();
+    });
+  </script>
+</body>
+</html>
