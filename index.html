@@ -19,7 +19,7 @@
 
         body { font-family: 'Sarabun', sans-serif; background-color: #f1f5f9; padding: 20px; color: #1e293b; margin: 0; }
         .container { max-width: 600px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin-bottom: 20px;}
-        .dashboard-container { max-width: 900px; } 
+        .dashboard-container { max-width: 1500px; } 
         h2 { color: #0369a1; text-align: center; margin-top: 0; font-weight: 700; }
         label { font-weight: 600; display: block; margin-top: 15px; font-size: 16px; }
         select, input { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-family: 'Sarabun', sans-serif; font-size: 16px; }
@@ -43,7 +43,7 @@
         .info-table { width: 100%; margin-bottom: 15px; font-size: var(--font-size-main); flex-shrink: 0; }
         
         /* 💡 ปรับปรุงตารางให้กว้างพอดีข้อความและไม่ขึ้นบรรทัดใหม่ */
-        .vaccine-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: font-size: 10pt; flex-shrink: 0; }
+        .vaccine-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 10pt; flex-shrink: 0; }
         .vaccine-table th, .vaccine-table td { 
             border: 1px solid black; 
             padding: 4px 8px; 
@@ -80,6 +80,32 @@
             gap: 15px; 
             width: 100%;
             margin-bottom: 10px;
+        }
+
+        /* Dashboard Matrix */
+        .dashboard-table-wrap { overflow: auto; max-height: 68vh; border: 1px solid #cbd5e1; border-radius: 10px; }
+        .matrix-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; min-width: 1000px; }
+        .matrix-table th { position: sticky; top: 0; z-index: 3; background: #0f172a; color: white; padding: 10px 8px; text-align: center; white-space: nowrap; border-right: 1px solid #334155; }
+        .matrix-table td { padding: 9px 8px; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; vertical-align: middle; background: white; }
+        .matrix-table .sticky-col { position: sticky; left: 0; z-index: 2; min-width: 190px; max-width: 240px; }
+        .matrix-table th.sticky-col { z-index: 4; background: #0f172a; }
+        .matrix-table td.sticky-col { background: #ffffff; box-shadow: 3px 0 5px rgba(15, 23, 42, 0.08); }
+        .matrix-table tbody tr:hover td { background: #f8fafc; }
+        .matrix-table tbody tr:hover td.sticky-col { background: #f8fafc; }
+        .matrix-cell { min-width: 105px; text-align: center; line-height: 1.25; }
+        .matrix-cell .cell-date { display: block; font-size: 11px; margin-top: 3px; color: #475569; white-space: nowrap; }
+        .cell-done { background: #dcfce7 !important; color: #166534; }
+        .cell-pending { background: #fef9c3 !important; color: #854d0e; }
+        .cell-overdue { background: #fee2e2 !important; color: #991b1b; }
+        .cell-missing { background: #f1f5f9 !important; color: #94a3b8; }
+        .dashboard-legend { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; color: #475569; font-size: 12px; margin: 10px 0; }
+        .legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .container { padding: 15px; }
+            .matrix-table { font-size: 12px; }
+            .matrix-table .sticky-col { min-width: 155px; max-width: 180px; }
         }
 
         @media print {
@@ -159,24 +185,30 @@
                     <option value="Completed">เสร็จสิ้น 100%</option>
                 </select>
             </div>
+            <div style="flex: 1; min-width: 180px;">
+                <label style="margin-top: 0; font-size: 14px; color: #475569;">กรองตามโปรแกรม:</label>
+                <select id="filterProgram" onchange="applyDashboardFilters()" style="padding: 8px; margin-top: 5px;">
+                    <option value="">-- ทุกโปรแกรม --</option>
+                </select>
+            </div>
             <div style="display: flex; align-items: flex-end;">
                 <button onclick="loadDashboardData()" style="padding: 8px 15px; background: #0ea5e9; color: white; border: none; border-radius: 8px; font-family: 'Sarabun'; cursor: pointer; font-weight: bold; height: 42px;">🔄 โหลดข้อมูลใหม่</button>
             </div>
         </div>
 
-        <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; font-size: 14px; min-width: 700px;">
-                <thead>
-                    <tr style="background: #0f172a; color: white; text-align: left;">
-                        <th style="padding: 10px;">Batch ID / วันที่รับเข้า</th>
-                        <th style="padding: 10px;">ฟาร์ม / โรงเรือน</th>
-                        <th style="padding: 10px;">ประเภทสุกร</th>
-                        <th style="padding: 10px; text-align: center;">ความคืบหน้า</th>
-                        <th style="padding: 10px; text-align: center;">สถานะ</th>
-                    </tr>
-                </thead>
+        <div class="dashboard-legend">
+            <span><span class="legend-dot" style="background:#22c55e;"></span>ทำแล้ว</span>
+            <span><span class="legend-dot" style="background:#eab308;"></span>รอดำเนินการ</span>
+            <span><span class="legend-dot" style="background:#ef4444;"></span>เลยกำหนด</span>
+            <span><span class="legend-dot" style="background:#cbd5e1;"></span>ไม่มีข้อมูล/ไม่ใช้</span>
+            <span id="dashboardUpdatedAt" style="margin-left:auto;">ยังไม่ได้โหลดข้อมูล</span>
+        </div>
+
+        <div class="dashboard-table-wrap">
+            <table class="matrix-table">
+                <thead id="dashboardTableHead"></thead>
                 <tbody id="dashboardTableBody">
-                    <tr><td colspan="5" style="text-align: center; padding: 20px;">คลิกปุ่มโหลดข้อมูลใหม่...</td></tr>
+                    <tr><td colspan="6" style="text-align: center; padding: 20px;">คลิกปุ่มโหลดข้อมูลใหม่...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -225,11 +257,11 @@
                 <label>วันที่รับเข้า</label>
                 <input type="date" id="admissionDate" required>
                 <label>สุกรทั้งหมด (ตัว)</label>
-                <input type="number" id="totalQty" required>
+                <input type="number" id="totalQty" required min="1" step="1">
                 <label>อายุรับเข้า (สัปดาห์)</label>
-                <input type="number" id="pigAge" required step="1">
+                <input type="number" id="pigAge" required min="0" step="1">
             </div>
-            <button type="submit" class="btn-primary">ออกรายงานโปรแกรมวัคซีน</button>
+            <button type="submit" id="btnGenerate" class="btn-primary">ออกรายงานโปรแกรมวัคซีน</button>
         </form>
     </div>
 </div>
@@ -323,30 +355,40 @@
     
     let masterData = { regions: {}, programs: [] };
     let currentUser = null; 
+    let currentSessionToken = "";
     let currentDashboardData = []; 
     
     // ตัวแปรระบบตะกร้าเก็บงาน (Cart)
     let scheduleCart = []; 
     let currentFarmForCart = "";
 
-    window.onload = async () => {
-        try {
-            const [regRes, progRes] = await Promise.all([
-                fetch(SCRIPT_URL + "?action=getRegionsAndFarms").then(r => r.json()),
-                fetch(SCRIPT_URL + "?action=getPrograms").then(r => r.json())
-            ]);
-            masterData.regions = regRes.data;
-            masterData.programs = progRes.data;
-            
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('loginSection').style.display = 'block';
-        } catch (e) { 
-            console.error("Fetch Error:", e);
-            document.getElementById('loading').innerHTML = "❌ ระบบขัดข้อง ไม่สามารถดึงข้อมูลได้<br><span style='font-size:14px; color:#64748b; font-weight:normal; margin-top:10px; display:block;'>กรุณาตรวจสอบการ Deploy Code.gs (เวอร์ชันใหม่) หรือตรวจสอบความถูกต้องของชื่อชีตใน Google Sheets</span>"; 
-        }
+    window.onload = () => {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('loginSection').style.display = 'block';
     };
 
-    function doLogin(e) {
+    function buildApiUrl(action) {
+        return `${SCRIPT_URL}?action=${encodeURIComponent(action)}&sessionToken=${encodeURIComponent(currentSessionToken)}`;
+    }
+
+    async function loadMasterData() {
+        const [regRes, progRes] = await Promise.all([
+            fetch(buildApiUrl("getRegionsAndFarms")).then(r => r.json()),
+            fetch(buildApiUrl("getPrograms")).then(r => r.json())
+        ]);
+        if (regRes.status !== "success") throw new Error(regRes.message || "ดึงข้อมูลฟาร์มไม่สำเร็จ");
+        if (progRes.status !== "success") throw new Error(progRes.message || "ดึงข้อมูลโปรแกรมไม่สำเร็จ");
+        masterData.regions = regRes.data || {};
+        masterData.programs = progRes.data || [];
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? "").replace(/[&<>'"]/g, char => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+        })[char]);
+    }
+
+    async function doLogin(e) {
         e.preventDefault();
         const btn = document.getElementById('btnLogin');
         btn.innerText = "⏳ กำลังตรวจสอบ...";
@@ -355,12 +397,16 @@
         const u = document.getElementById('txtUser').value;
         const p = document.getElementById('txtPass').value;
 
-        fetch(SCRIPT_URL, {
-            method: 'POST',
-            body: JSON.stringify({ action: "login", username: u, password: p })
-        }).then(res => res.json()).then(data => {
+        try {
+            const data = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: "login", username: u, password: p })
+            }).then(res => res.json());
+
             if(data.status === "success") {
                 currentUser = data.user;
+                currentSessionToken = data.sessionToken;
+                await loadMasterData();
                 document.getElementById('loginSection').style.display = 'none';
                 document.getElementById('appWrapper').style.display = 'block';
                 
@@ -371,15 +417,15 @@
 
                 setupRoleUI(); 
             } else {
-                alert("❌ " + data.message);
-                btn.innerText = "เข้าสู่ระบบ";
-                btn.disabled = false;
+                throw new Error(data.message || "เข้าสู่ระบบไม่สำเร็จ");
             }
-        }).catch(err => {
-            alert("❌ เชื่อมต่อเซิร์ฟเวอร์ไม่ได้");
+        } catch (err) {
+            currentUser = null;
+            currentSessionToken = "";
+            alert("❌ " + (err.message || "เชื่อมต่อเซิร์ฟเวอร์ไม่ได้"));
             btn.innerText = "เข้าสู่ระบบ";
             btn.disabled = false;
-        });
+        }
     }
 
     function setupRoleUI() {
@@ -454,70 +500,124 @@
 
     function loadDashboardData() {
         const tbody = document.getElementById('dashboardTableBody');
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">⏳ กำลังโหลดข้อมูล...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">⏳ กำลังโหลดข้อมูล...</td></tr>';
         
-        fetch(SCRIPT_URL + "?action=getDashboardData")
+        fetch(buildApiUrl("getDashboardData"))
         .then(res => res.json())
         .then(data => {
             if(data.status === "success") {
-                currentDashboardData = data.data; 
+                currentDashboardData = data.data || [];
+                document.getElementById('dashboardUpdatedAt').innerText = `อัปเดตล่าสุด: ${new Date(data.generatedAt || Date.now()).toLocaleString('th-TH')}`;
                 populateDashboardFilters(); 
                 applyDashboardFilters(); 
             } else {
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: red;">❌ ${data.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: red; padding:20px;">❌ ${escapeHtml(data.message)}</td></tr>`;
             }
         })
         .catch(err => {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: red;">❌ เชื่อมต่อเซิร์ฟเวอร์ไม่ได้</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: red; padding:20px;">❌ เชื่อมต่อเซิร์ฟเวอร์ไม่ได้</td></tr>';
         });
     }
 
     function populateDashboardFilters() {
         const filterFarm = document.getElementById('filterFarm');
         const filterType = document.getElementById('filterType');
+        const filterProgram = document.getElementById('filterProgram');
         
         filterFarm.innerHTML = '<option value="">-- ทุกฟาร์ม --</option>';
         filterType.innerHTML = '<option value="">-- ทุกประเภทสุกร --</option>';
+        filterProgram.innerHTML = '<option value="">-- ทุกโปรแกรม --</option>';
         
         const farms = new Set();
         const types = new Set();
+        const programs = new Map();
         
         currentDashboardData.forEach(item => {
-            if (currentUser.role === "Vet" && item.vetName !== currentUser.vetName) return;
             farms.add(item.farmName);
             types.add(item.swineType);
+            programs.set(item.programId || '__legacy__', item.programName || 'ข้อมูลเดิม');
         });
         
         Array.from(farms).sort().forEach(f => filterFarm.add(new Option(f, f)));
         Array.from(types).sort().forEach(t => filterType.add(new Option(t, t)));
+        Array.from(programs.entries())
+            .sort((a, b) => String(a[1]).localeCompare(String(b[1]), 'th'))
+            .forEach(([id, name]) => filterProgram.add(new Option(name, id)));
     }
 
     function applyDashboardFilters() {
         const farmVal = document.getElementById('filterFarm').value;
         const typeVal = document.getElementById('filterType').value;
         const statusVal = document.getElementById('filterStatus').value;
+        const programVal = document.getElementById('filterProgram').value;
 
         const filteredItems = currentDashboardData.filter(item => {
-            if (currentUser.role === "Vet" && item.vetName !== currentUser.vetName) return false;
-            
             let matchFarm = farmVal === "" || item.farmName === farmVal;
             let matchType = typeVal === "" || item.swineType === typeVal;
             let matchStatus = statusVal === "" || item.status === statusVal;
+            let matchProgram = programVal === "" || (item.programId || '__legacy__') === programVal;
 
-            return matchFarm && matchType && matchStatus;
+            return matchFarm && matchType && matchStatus && matchProgram;
         });
 
         renderDashboard(filteredItems);
     }
 
+    function collectMatrixColumns(items) {
+        const columns = new Map();
+        items.forEach(item => (item.matrix || []).forEach(cell => {
+            const current = columns.get(cell.columnKey);
+            if (!current || Number(cell.displayOrder) < current.displayOrder) {
+                columns.set(cell.columnKey, {
+                    key: cell.columnKey,
+                    label: cell.label,
+                    displayOrder: Number(cell.displayOrder) || 9999
+                });
+            }
+        }));
+        return Array.from(columns.values()).sort((a, b) =>
+            a.displayOrder - b.displayOrder || String(a.label).localeCompare(String(b.label), 'th')
+        );
+    }
+
+    function getStatusBadge(status) {
+        if(status === "Completed") return '<span style="background:#16a34a; color:white; padding:4px 8px; border-radius:4px; font-size:12px; white-space:nowrap;">เสร็จสิ้น</span>';
+        if(status === "Overdue") return '<span style="background:#dc2626; color:white; padding:4px 8px; border-radius:4px; font-size:12px; white-space:nowrap;">ล่าช้า!</span>';
+        return '<span style="background:#0284c7; color:white; padding:4px 8px; border-radius:4px; font-size:12px; white-space:nowrap;">กำลังดำเนินการ</span>';
+    }
+
+    function renderMatrixCell(cell) {
+        if (!cell || cell.status === 'missing') return '<td class="matrix-cell cell-missing">—</td>';
+        const targetDate = cell.targetDate ? formatDateThai(cell.targetDate) : '-';
+        if (cell.status === 'done') {
+            const completed = cell.completedAt ? formatDateThai(cell.completedAt) : targetDate;
+            return `<td class="matrix-cell cell-done"><strong>✅ ทำแล้ว</strong><span class="cell-date">${escapeHtml(completed)}</span></td>`;
+        }
+        if (cell.status === 'overdue') {
+            return `<td class="matrix-cell cell-overdue"><strong>🚨 เลยกำหนด</strong><span class="cell-date">${escapeHtml(targetDate)}</span></td>`;
+        }
+        return `<td class="matrix-cell cell-pending"><strong>⏳ รอ</strong><span class="cell-date">${escapeHtml(targetDate)}</span></td>`;
+    }
+
     function renderDashboard(items) {
+        const thead = document.getElementById('dashboardTableHead');
         const tbody = document.getElementById('dashboardTableBody');
         tbody.innerHTML = '';
-        
-        let countTotal = 0, countCompleted = 0, countOverdue = 0;
+        const matrixColumns = collectMatrixColumns(items);
+        const totalColumns = 6 + matrixColumns.length;
 
+        thead.innerHTML = `<tr>
+            <th class="sticky-col" style="text-align:left;">ฟาร์ม / โรงเรือน</th>
+            <th>Batch / วันที่รับเข้า</th>
+            <th>ประเภท / โปรแกรม</th>
+            <th>อายุปัจจุบัน</th>
+            ${matrixColumns.map(column => `<th>${escapeHtml(column.label)}</th>`).join('')}
+            <th>ความคืบหน้า</th>
+            <th>สถานะ</th>
+        </tr>`;
+        
         if(items.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>';
+            tbody.innerHTML = `<tr><td colspan="${totalColumns}" style="text-align: center; padding: 20px;">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>`;
             document.getElementById('kpiTotal').innerText = 0;
             document.getElementById('kpiCompleted').innerText = 0;
             document.getElementById('kpiOverdue').innerText = 0;
@@ -525,35 +625,29 @@
         }
 
         items.forEach(item => {
-            countTotal++;
-            if(item.status === "Completed") countCompleted++;
-            if(item.status === "Overdue") countOverdue++;
-
-            let statusBadge = "";
-            if(item.status === "Completed") statusBadge = '<span style="background:#16a34a; color:white; padding:4px 8px; border-radius:4px; font-size:12px;">เสร็จสิ้น</span>';
-            else if(item.status === "Overdue") statusBadge = '<span style="background:#dc2626; color:white; padding:4px 8px; border-radius:4px; font-size:12px;">ล่าช้า!</span>';
-            else statusBadge = '<span style="background:#0284c7; color:white; padding:4px 8px; border-radius:4px; font-size:12px;">กำลังดำเนินการ</span>';
-
+            const cellsByKey = new Map((item.matrix || []).map(cell => [cell.columnKey, cell]));
+            const currentAge = item.currentAgeWeeks === null || item.currentAgeWeeks === undefined ? '—' : `${item.currentAgeWeeks} สป.`;
             const tr = document.createElement('tr');
-            tr.style.borderBottom = "1px solid #e2e8f0";
             tr.innerHTML = `
-                <td style="padding: 10px;"><strong>${item.batchId}</strong><br><span style="color:#64748b; font-size:12px;">รับเข้า: ${formatDateThai(item.admDate)}</span></td>
-                <td style="padding: 10px;">${item.farmName}<br><span style="color:#64748b; font-size:12px;">${item.houseName}</span></td>
-                <td style="padding: 10px;">${item.swineType}<br><span style="color:#64748b; font-size:12px;">${item.qty} ตัว</span></td>
-                <td style="padding: 10px; text-align: center;">
+                <td class="sticky-col"><strong>${escapeHtml(item.farmName)}</strong><br><span style="color:#64748b; font-size:12px;">${escapeHtml(item.houseName)}</span></td>
+                <td><strong>${escapeHtml(item.batchId)}</strong><br><span style="color:#64748b; font-size:11px;">${escapeHtml(formatDateThai(item.admDate))}</span></td>
+                <td>${escapeHtml(item.swineType)}<br><span style="color:#64748b; font-size:11px;">${escapeHtml(item.programName)} · ${escapeHtml(item.qty)} ตัว</span></td>
+                <td style="text-align:center; white-space:nowrap;"><strong>${escapeHtml(currentAge)}</strong></td>
+                ${matrixColumns.map(column => renderMatrixCell(cellsByKey.get(column.key))).join('')}
+                <td style="text-align: center; min-width:110px;">
                     <div style="background:#e2e8f0; border-radius:10px; width:100%; height:8px; margin-bottom:5px; overflow:hidden;">
                         <div style="background:${item.status === 'Overdue' ? '#dc2626' : '#16a34a'}; width:${item.progress}%; height:100%;"></div>
                     </div>
                     <span style="font-weight:bold;">${item.progress}%</span> <span style="font-size:11px; color:#64748b;">(${item.doneTasks}/${item.totalTasks})</span>
                 </td>
-                <td style="padding: 10px; text-align: center;">${statusBadge}</td>
+                <td style="text-align: center;">${getStatusBadge(item.status)}</td>
             `;
             tbody.appendChild(tr);
         });
 
-        document.getElementById('kpiTotal').innerText = countTotal;
-        document.getElementById('kpiCompleted').innerText = countCompleted;
-        document.getElementById('kpiOverdue').innerText = countOverdue;
+        document.getElementById('kpiTotal').innerText = items.length;
+        document.getElementById('kpiCompleted').innerText = items.filter(item => item.status === "Completed").length;
+        document.getElementById('kpiOverdue').innerText = items.filter(item => item.status === "Overdue").length;
     }
 
     function updateFarmData() {
@@ -571,7 +665,7 @@
 
         fetch(SCRIPT_URL, {
             method: 'POST',
-            body: JSON.stringify({ action: "updateFarmByVet", targetFarm: farm, newUsername: newUser, newPassword: newPass, newLineId: newLine })
+            body: JSON.stringify({ action: "updateFarmByVet", sessionToken: currentSessionToken, targetFarm: farm, newUsername: newUser, newPassword: newPass, newLineId: newLine })
         }).then(res => res.json()).then(data => {
             if(data.status === "success") {
                 alert("✅ อัปเดตข้อมูลฟาร์มเรียบร้อยแล้ว!");
@@ -620,8 +714,17 @@
         });
     }
 
+    function parseDateValue(value) {
+        if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+            const [year, month, day] = value.split('-').map(Number);
+            return new Date(year, month - 1, day, 12, 0, 0);
+        }
+        return new Date(value);
+    }
+
     function formatDateThai(dateStr) {
-        const d = new Date(dateStr);
+        const d = parseDateValue(dateStr);
+        if (Number.isNaN(d.getTime())) return '-';
         const shortMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
         const day = String(d.getDate()).padStart(2, '0');
         const yearShort = String(d.getFullYear() + 543).slice(-2);
@@ -629,10 +732,18 @@
     }
 
     function getShortThaiDate(dateStr) {
-        const d = new Date(dateStr);
+        const d = parseDateValue(dateStr);
+        if (Number.isNaN(d.getTime())) return '-';
         const days = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
         const shortMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
         return `วัน${days[d.getDay()]}ที่ ${d.getDate()} ${shortMonths[d.getMonth()]} ${d.getFullYear() + 543}`;
+    }
+
+    function toISODateLocal(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
     }
 
     function closeA4() {
@@ -651,8 +762,11 @@
         document.getElementById('houseName').focus();
     }
 
-    function generateA4(e) {
+    async function generateA4(e) {
         e.preventDefault();
+        const generateButton = document.getElementById('btnGenerate');
+        generateButton.disabled = true;
+        generateButton.innerText = '⏳ กำลังบันทึกข้อมูล...';
         const farmOpt = document.getElementById('farmSelect').options[document.getElementById('farmSelect').selectedIndex];
         const farm = farmOpt.value;
         const region = document.getElementById('regionSelect').value;
@@ -685,7 +799,7 @@
 
         const tbody = document.getElementById('vaccineTableBody');
         tbody.innerHTML = '';
-        const baseDateObj = new Date(admDate);
+        const baseDateObj = parseDateValue(admDate);
         const batchId = `B-${new Date().getFullYear()}${String(new Date().getMonth()+1).padStart(2,'0')}${String(new Date().getDate()).padStart(2,'0')}-${Math.floor(1000 + Math.random() * 9000)}`;
 
         let payloadForCart = { summaryInfo: { type: typeText.split(' : ')[0], qty: qty, admDate: formatDateThai(admDate), batchId: batchId, houseName: houseName }, scheduleData: [] };
@@ -699,19 +813,29 @@
         trInitial.innerHTML = `<td>${firstRowDateDisplay}</td><td>${initialAge}</td><td>-</td><td>-</td><td class="note-col"><strong>รับเข้าสุกร</strong></td><td></td>`;
         tbody.appendChild(trInitial);
 
-        const progRows = masterData.programs.filter(p => p.id === progId).sort((a, b) => a.offset - b.offset);
+        const progRows = masterData.programs
+            .filter(p => p.id === progId)
+            .sort((a, b) => Number(a.offset) - Number(b.offset) || Number(a.displayOrder) - Number(b.displayOrder));
         let tasksToSave = [];
 
-        progRows.forEach(row => {
+        progRows.forEach((row, rowIndex) => {
             const targetDateObj = new Date(baseDateObj);
             targetDateObj.setDate(targetDateObj.getDate() + parseInt(row.offset));
             const dateDisplay = formatDateThai(targetDateObj);
             const calculatedAge = Math.floor(initialAge + (parseInt(row.offset) / 7));
-            const standardDateForDB = targetDateObj.toISOString().split('T')[0];
-            const uniqueTaskId = `TK-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 100)}`;
+            const standardDateForDB = toISODateLocal(targetDateObj);
+            const uniqueTaskId = `TK-${batchId.substring(2)}-${String(rowIndex + 1).padStart(2, '0')}`;
             const vacNameFull = row.tradeName ? `${row.vacType} (${row.tradeName})` : row.vacType;
 
-            tasksToSave.push({ taskId: uniqueTaskId, farmName: farm, swineType: typeText.split(' : ')[0], targetDate: standardDateForDB, vaccineName: vacNameFull });
+            tasksToSave.push({
+                taskId: uniqueTaskId,
+                farmName: farm,
+                swineType: typeText.split(' : ')[0],
+                targetDate: standardDateForDB,
+                vaccineName: vacNameFull,
+                programId: progId,
+                stepId: row.stepId || ''
+            });
             payloadForCart.scheduleData.push({ date: dateDisplay, age: calculatedAge, vac: vacNameFull });
 
             const tr = document.createElement('tr');
@@ -720,16 +844,34 @@
             lastDate = dateDisplay;
         });
 
-        fetch(SCRIPT_URL, { 
-            method: 'POST', 
-            body: JSON.stringify({ 
-                action: "saveTasks", 
-                batchInfo: {
-                    batchId: batchId, farmName: farm, region: region, type: typeText.split(' : ')[0], qty: qty, admDate: admDate, vetName: farmOpt.dataset.vet, houseName: houseName
-                },
-                tasks: tasksToSave 
-            }) 
-        }).then(res => console.log("บันทึกคิวงาน Batch สำเร็จ")).catch(err => console.error("Error saving tasks"));
+        try {
+            const saveResult = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: "saveTasks",
+                    sessionToken: currentSessionToken,
+                    batchInfo: {
+                        batchId: batchId,
+                        farmName: farm,
+                        region: region,
+                        type: typeText.split(' : ')[0],
+                        qty: qty,
+                        admDate: admDate,
+                        vetName: farmOpt.dataset.vet,
+                        houseName: houseName,
+                        initialAgeWeeks: initialAge,
+                        programId: progId
+                    },
+                    tasks: tasksToSave
+                })
+            }).then(res => res.json());
+            if (saveResult.status !== "success") throw new Error(saveResult.message || "บันทึกข้อมูลไม่สำเร็จ");
+        } catch (err) {
+            alert("❌ " + (err.message || "ไม่สามารถบันทึกข้อมูลได้"));
+            generateButton.disabled = false;
+            generateButton.innerText = 'ออกรายงานโปรแกรมวัคซีน';
+            return;
+        }
 
         scheduleCart.push(payloadForCart);
         document.getElementById('btnSendLine').innerText = `📲 ส่งการ์ดทั้ง ${scheduleCart.length} ชุดเข้า LINE`;
@@ -740,6 +882,8 @@
         document.title = `${farm}_${houseName}_${typeText.split(' : ')[0]}_${progName}_${formatDateThai(admDate).replace(/\//g,'-')}`;
         document.getElementById('appWrapper').style.display = 'none';
         document.getElementById('a4Section').style.display = 'flex';
+        generateButton.disabled = false;
+        generateButton.innerText = 'ออกรายงานโปรแกรมวัคซีน';
     }
 
     function sendScheduleToLine() {
@@ -751,7 +895,7 @@
 
         fetch(SCRIPT_URL, { 
             method: 'POST', 
-            body: JSON.stringify({ action: "sendScheduleCard", farmName: currentFarmForCart, cart: scheduleCart }) 
+            body: JSON.stringify({ action: "sendScheduleCard", sessionToken: currentSessionToken, farmName: currentFarmForCart, cart: scheduleCart }) 
         })
         .then(res => res.json()).then(data => {
             if(data.status === "success"){ 
