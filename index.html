@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>[NextVac By SVS]</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     
     <style>
         :root {
@@ -100,6 +102,30 @@
         .cell-missing { background: #f1f5f9 !important; color: #94a3b8; }
         .dashboard-legend { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; color: #475569; font-size: 12px; margin: 10px 0; }
         .legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+        .dashboard-action-group { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+        .dashboard-action-btn { height: 42px; padding: 8px 14px; color: white; border: none; border-radius: 8px; font-family: 'Sarabun', sans-serif; cursor: pointer; font-weight: 700; white-space: nowrap; }
+        .dashboard-action-btn:disabled { cursor: not-allowed; opacity: 0.55; }
+        .btn-dashboard-refresh { background: #0ea5e9; }
+        .btn-dashboard-pdf { background: #dc2626; }
+        .btn-dashboard-png { background: #7c3aed; }
+
+        /* พื้นที่จำลองสำหรับส่งออก Dashboard: อยู่นอกจอ แต่ยัง render สีและฟอนต์ได้ครบ */
+        .dashboard-export-stage { position: fixed; left: -100000px; top: 0; z-index: -1000; background: white; pointer-events: none; }
+        .dashboard-export { box-sizing: border-box; padding: 30px; background: white; color: #1e293b; font-family: 'Sarabun', sans-serif; }
+        .dashboard-export-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; padding-bottom: 16px; margin-bottom: 16px; border-bottom: 3px solid #0369a1; }
+        .dashboard-export-title { margin: 0; color: #0369a1; font-size: 27px; text-align: left; }
+        .dashboard-export-subtitle { margin: 5px 0 0; color: #475569; font-size: 14px; }
+        .dashboard-export-time { color: #475569; font-size: 13px; text-align: right; white-space: nowrap; }
+        .dashboard-export-filters { margin: 0 0 16px; padding: 11px 14px; border: 1px solid #cbd5e1; border-radius: 9px; background: #f8fafc; color: #334155; font-size: 13px; }
+        .dashboard-export-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+        .dashboard-export-kpi { padding: 12px 16px; border-radius: 9px; text-align: center; border: 1px solid; }
+        .dashboard-export-kpi strong { display: block; font-size: 24px; margin-top: 2px; }
+        .dashboard-export .dashboard-legend { margin: 8px 0 12px; }
+        .dashboard-export .matrix-table { width: max-content; min-width: 100%; }
+        .dashboard-export .matrix-table th,
+        .dashboard-export .matrix-table .sticky-col { position: static !important; }
+        .dashboard-export .matrix-table td.sticky-col { box-shadow: none; }
+        .dashboard-export-footer { margin-top: 12px; color: #64748b; font-size: 11px; text-align: right; }
 
         @media (max-width: 768px) {
             body { padding: 10px; }
@@ -164,6 +190,12 @@
         </div>
 
         <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <div id="filterRegionWrap" style="flex: 1; min-width: 150px;">
+                <label style="margin-top: 0; font-size: 14px; color: #475569;">กรองตามภาค:</label>
+                <select id="filterRegion" onchange="handleDashboardRegionChange()" style="padding: 8px; margin-top: 5px;">
+                    <option value="">-- ทุกภาค --</option>
+                </select>
+            </div>
             <div style="flex: 1; min-width: 150px;">
                 <label style="margin-top: 0; font-size: 14px; color: #475569;">กรองตามฟาร์ม:</label>
                 <select id="filterFarm" onchange="applyDashboardFilters()" style="padding: 8px; margin-top: 5px;">
@@ -191,8 +223,10 @@
                     <option value="">-- ทุกโปรแกรม --</option>
                 </select>
             </div>
-            <div style="display: flex; align-items: flex-end;">
-                <button onclick="loadDashboardData()" style="padding: 8px 15px; background: #0ea5e9; color: white; border: none; border-radius: 8px; font-family: 'Sarabun'; cursor: pointer; font-weight: bold; height: 42px;">🔄 โหลดข้อมูลใหม่</button>
+            <div class="dashboard-action-group">
+                <button class="dashboard-action-btn btn-dashboard-refresh" onclick="loadDashboardData()">🔄 โหลดข้อมูลใหม่</button>
+                <button id="btnExportPdf" class="dashboard-action-btn btn-dashboard-pdf" onclick="exportDashboard('pdf')" disabled>📄 ส่งออก PDF</button>
+                <button id="btnExportPng" class="dashboard-action-btn btn-dashboard-png" onclick="exportDashboard('png')" disabled>🖼️ ส่งออก PNG</button>
             </div>
         </div>
 
@@ -357,6 +391,7 @@
     let currentUser = null; 
     let currentSessionToken = "";
     let currentDashboardData = []; 
+    let currentFilteredDashboardData = [];
     
     // ตัวแปรระบบตะกร้าเก็บงาน (Cart)
     let scheduleCart = []; 
@@ -371,10 +406,52 @@
         return `${SCRIPT_URL}?action=${encodeURIComponent(action)}&sessionToken=${encodeURIComponent(currentSessionToken)}`;
     }
 
+    function repairTextEncoding(value) {
+        if (typeof value !== 'string' || !/[ÃÂà¸à¹]/.test(value) || typeof TextDecoder === 'undefined') return value;
+        try {
+            const bytes = Uint8Array.from(Array.from(value), char => char.charCodeAt(0) & 0xff);
+            const decoded = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+            return /[\u0E00-\u0E7F]/.test(decoded) ? decoded : value;
+        } catch (error) {
+            return value;
+        }
+    }
+
+    function normalizeApiText(value) {
+        if (typeof value === 'string') return repairTextEncoding(value);
+        if (Array.isArray(value)) return value.map(normalizeApiText);
+        if (value && typeof value === 'object') {
+            return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, normalizeApiText(item)]));
+        }
+        return value;
+    }
+
+    async function fetchJson(url, options = {}) {
+        const response = await fetch(url, { redirect: 'follow', cache: 'no-store', ...options });
+        const rawText = (await response.text()).replace(/^\uFEFF/, '').trim();
+        if (!rawText) throw new Error(`เซิร์ฟเวอร์ไม่ส่งข้อมูลกลับมา (HTTP ${response.status})`);
+        try {
+            return normalizeApiText(JSON.parse(rawText));
+        } catch (error) {
+            if (/^<!doctype|^<html/i.test(rawText)) {
+                throw new Error(`GAS ส่งหน้า HTML กลับมาแทน JSON (HTTP ${response.status}) กรุณาตรวจ Deployment และหน้า Executions ใน Apps Script`);
+            }
+            throw new Error(`ข้อมูลตอบกลับจาก GAS ไม่ใช่ JSON ที่ถูกต้อง (HTTP ${response.status})`);
+        }
+    }
+
+    function postJson(payload) {
+        return fetchJson(SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(payload)
+        });
+    }
+
     async function loadMasterData() {
         const [regRes, progRes] = await Promise.all([
-            fetch(buildApiUrl("getRegionsAndFarms")).then(r => r.json()),
-            fetch(buildApiUrl("getPrograms")).then(r => r.json())
+            fetchJson(buildApiUrl("getRegionsAndFarms")),
+            fetchJson(buildApiUrl("getPrograms"))
         ]);
         if (regRes.status !== "success") throw new Error(regRes.message || "ดึงข้อมูลฟาร์มไม่สำเร็จ");
         if (progRes.status !== "success") throw new Error(progRes.message || "ดึงข้อมูลโปรแกรมไม่สำเร็จ");
@@ -388,6 +465,10 @@
         })[char]);
     }
 
+    function isManagementRole(role) {
+        return ['Executive', 'Management', 'ผู้บริหาร'].includes(String(role || '').trim());
+    }
+
     async function doLogin(e) {
         e.preventDefault();
         const btn = document.getElementById('btnLogin');
@@ -398,10 +479,7 @@
         const p = document.getElementById('txtPass').value;
 
         try {
-            const data = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                body: JSON.stringify({ action: "login", username: u, password: p })
-            }).then(res => res.json());
+            const data = await postJson({ action: "login", username: u, password: p });
 
             if(data.status === "success") {
                 currentUser = data.user;
@@ -453,6 +531,7 @@
 
         } else if (currentUser.role === "Vet") {
             document.getElementById('vetTabs').style.display = 'flex';
+            document.getElementById('filterRegionWrap').style.display = 'none';
             
             const vetRegions = new Set();
             Object.keys(masterData.regions).forEach(reg => {
@@ -472,6 +551,7 @@
 
         } else if (currentUser.role === "Admin") {
             document.getElementById('vetTabs').style.display = 'flex';
+            document.getElementById('filterRegionWrap').style.display = 'block';
             Object.keys(masterData.regions).forEach(reg => regSelect.add(new Option(reg, reg)));
             
             const mngSelect = document.getElementById('manageFarmSelect');
@@ -482,6 +562,12 @@
                 });
             });
 
+            switchTab('dashboard');
+        } else if (isManagementRole(currentUser.role)) {
+            document.getElementById('vetTabs').style.display = 'flex';
+            document.getElementById('btnTabCreate').style.display = 'none';
+            document.getElementById('btnTabManage').style.display = 'none';
+            document.getElementById('filterRegionWrap').style.display = 'block';
             switchTab('dashboard');
         }
     }
@@ -500,10 +586,12 @@
 
     function loadDashboardData() {
         const tbody = document.getElementById('dashboardTableBody');
+        currentFilteredDashboardData = [];
+        document.getElementById('btnExportPdf').disabled = true;
+        document.getElementById('btnExportPng').disabled = true;
         tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">⏳ กำลังโหลดข้อมูล...</td></tr>';
         
-        fetch(buildApiUrl("getDashboardData"))
-        .then(res => res.json())
+        fetchJson(buildApiUrl("getDashboardData"))
         .then(data => {
             if(data.status === "success") {
                 currentDashboardData = data.data || [];
@@ -523,26 +611,67 @@
         const filterFarm = document.getElementById('filterFarm');
         const filterType = document.getElementById('filterType');
         const filterProgram = document.getElementById('filterProgram');
+        const filterRegion = document.getElementById('filterRegion');
+
+        const previousRegion = filterRegion.value;
+        const previousFarm = filterFarm.value;
+        const previousType = filterType.value;
+        const previousProgram = filterProgram.value;
         
-        filterFarm.innerHTML = '<option value="">-- ทุกฟาร์ม --</option>';
         filterType.innerHTML = '<option value="">-- ทุกประเภทสุกร --</option>';
         filterProgram.innerHTML = '<option value="">-- ทุกโปรแกรม --</option>';
+        filterRegion.innerHTML = '<option value="">-- ทุกภาค --</option>';
         
-        const farms = new Set();
         const types = new Set();
         const programs = new Map();
+        const regions = new Set();
         
         currentDashboardData.forEach(item => {
-            farms.add(item.farmName);
             types.add(item.swineType);
             programs.set(item.programId || '__legacy__', item.programName || 'ข้อมูลเดิม');
+            if (item.region) regions.add(item.region);
         });
         
-        Array.from(farms).sort().forEach(f => filterFarm.add(new Option(f, f)));
-        Array.from(types).sort().forEach(t => filterType.add(new Option(t, t)));
+        const regionOrder = ['ภาคเหนือ', 'ภาคกลาง', 'ตะวันออก', 'ภาคตะวันออก', 'ตะวันตก', 'ภาคตะวันตก', 'ภาคอีสานบน', 'ภาคอีสานล่าง', 'ภาคใต้'];
+        Array.from(regions).sort((a, b) => {
+            const ai = regionOrder.indexOf(String(a));
+            const bi = regionOrder.indexOf(String(b));
+            if (ai !== -1 || bi !== -1) return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+            return String(a).localeCompare(String(b), 'th');
+        }).forEach(region => filterRegion.add(new Option(region, region)));
+        Array.from(types).sort((a, b) => String(a).localeCompare(String(b), 'th')).forEach(t => filterType.add(new Option(t, t)));
         Array.from(programs.entries())
             .sort((a, b) => String(a[1]).localeCompare(String(b[1]), 'th'))
             .forEach(([id, name]) => filterProgram.add(new Option(name, id)));
+
+        if (Array.from(filterRegion.options).some(option => option.value === previousRegion)) filterRegion.value = previousRegion;
+        if (Array.from(filterType.options).some(option => option.value === previousType)) filterType.value = previousType;
+        if (Array.from(filterProgram.options).some(option => option.value === previousProgram)) filterProgram.value = previousProgram;
+        updateDashboardFarmOptions(previousFarm);
+    }
+
+    function updateDashboardFarmOptions(preferredFarm = '') {
+        const filterFarm = document.getElementById('filterFarm');
+        const regionVal = document.getElementById('filterRegion').value;
+        const farms = new Set();
+
+        currentDashboardData.forEach(item => {
+            if ((!regionVal || item.region === regionVal) && item.farmName) farms.add(item.farmName);
+        });
+
+        filterFarm.innerHTML = '<option value="">-- ทุกฟาร์ม --</option>';
+        Array.from(farms)
+            .sort((a, b) => String(a).localeCompare(String(b), 'th'))
+            .forEach(farm => filterFarm.add(new Option(farm, farm)));
+
+        if (preferredFarm && Array.from(filterFarm.options).some(option => option.value === preferredFarm)) {
+            filterFarm.value = preferredFarm;
+        }
+    }
+
+    function handleDashboardRegionChange() {
+        updateDashboardFarmOptions('');
+        applyDashboardFilters();
     }
 
     function applyDashboardFilters() {
@@ -550,16 +679,19 @@
         const typeVal = document.getElementById('filterType').value;
         const statusVal = document.getElementById('filterStatus').value;
         const programVal = document.getElementById('filterProgram').value;
+        const regionVal = document.getElementById('filterRegion').value;
 
         const filteredItems = currentDashboardData.filter(item => {
+            let matchRegion = regionVal === "" || item.region === regionVal;
             let matchFarm = farmVal === "" || item.farmName === farmVal;
             let matchType = typeVal === "" || item.swineType === typeVal;
             let matchStatus = statusVal === "" || item.status === statusVal;
             let matchProgram = programVal === "" || (item.programId || '__legacy__') === programVal;
 
-            return matchFarm && matchType && matchStatus && matchProgram;
+            return matchRegion && matchFarm && matchType && matchStatus && matchProgram;
         });
 
+        currentFilteredDashboardData = filteredItems;
         renderDashboard(filteredItems);
     }
 
@@ -621,6 +753,8 @@
             document.getElementById('kpiTotal').innerText = 0;
             document.getElementById('kpiCompleted').innerText = 0;
             document.getElementById('kpiOverdue').innerText = 0;
+            document.getElementById('btnExportPdf').disabled = true;
+            document.getElementById('btnExportPng').disabled = true;
             return;
         }
 
@@ -648,6 +782,237 @@
         document.getElementById('kpiTotal').innerText = items.length;
         document.getElementById('kpiCompleted').innerText = items.filter(item => item.status === "Completed").length;
         document.getElementById('kpiOverdue').innerText = items.filter(item => item.status === "Overdue").length;
+        document.getElementById('btnExportPdf').disabled = false;
+        document.getElementById('btnExportPng').disabled = false;
+    }
+
+    function getSelectedFilterText(selectId, allText) {
+        const select = document.getElementById(selectId);
+        if (!select || !select.value || select.selectedIndex < 0) return allText;
+        return select.options[select.selectedIndex].text.trim();
+    }
+
+    function getDashboardExportMeta() {
+        return [
+            `ภาค: ${getSelectedFilterText('filterRegion', 'ทุกภาค')}`,
+            `ฟาร์ม: ${getSelectedFilterText('filterFarm', 'ทุกฟาร์ม')}`,
+            `ประเภทสุกร: ${getSelectedFilterText('filterType', 'ทุกประเภท')}`,
+            `สถานะ: ${getSelectedFilterText('filterStatus', 'ทุกสถานะ')}`,
+            `โปรแกรม: ${getSelectedFilterText('filterProgram', 'ทุกโปรแกรม')}`
+        ].join('  •  ');
+    }
+
+    function createDashboardExportStage() {
+        if (!currentFilteredDashboardData.length) throw new Error('ไม่มีข้อมูลสำหรับส่งออกตาม Filter ที่เลือก');
+
+        const sourceTable = document.querySelector('#dashboardSection .matrix-table');
+        if (!sourceTable) throw new Error('ไม่พบตาราง Dashboard');
+
+        const stage = document.createElement('div');
+        stage.className = 'dashboard-export-stage';
+        const exportWidth = Math.max(1320, Math.ceil(sourceTable.scrollWidth) + 60);
+        stage.style.width = `${exportWidth}px`;
+
+        const root = document.createElement('section');
+        root.className = 'dashboard-export';
+        root.style.width = `${exportWidth}px`;
+
+        const header = document.createElement('div');
+        header.className = 'dashboard-export-header';
+        const heading = document.createElement('div');
+        const title = document.createElement('h1');
+        title.className = 'dashboard-export-title';
+        title.textContent = 'NextVac Dashboard';
+        const subtitle = document.createElement('p');
+        subtitle.className = 'dashboard-export-subtitle';
+        subtitle.textContent = 'รายงานติดตามความคืบหน้าโปรแกรมวัคซีน';
+        heading.append(title, subtitle);
+        const exportTime = document.createElement('div');
+        exportTime.className = 'dashboard-export-time';
+        exportTime.textContent = `ออกรายงาน: ${new Date().toLocaleString('th-TH')}`;
+        header.append(heading, exportTime);
+
+        const filters = document.createElement('div');
+        filters.className = 'dashboard-export-filters';
+        filters.textContent = getDashboardExportMeta();
+
+        const kpis = document.createElement('div');
+        kpis.className = 'dashboard-export-kpis';
+        const kpiDefinitions = [
+            { label: 'จำนวนรุ่นสุกรทั้งหมด', value: document.getElementById('kpiTotal').innerText, bg: '#e0f2fe', border: '#bae6fd', color: '#0369a1' },
+            { label: 'ดำเนินการเสร็จสิ้น (100%)', value: document.getElementById('kpiCompleted').innerText, bg: '#dcfce7', border: '#bbf7d0', color: '#166534' },
+            { label: 'พบวัคซีนล่าช้า', value: document.getElementById('kpiOverdue').innerText, bg: '#fee2e2', border: '#fecaca', color: '#991b1b' }
+        ];
+        kpiDefinitions.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'dashboard-export-kpi';
+            card.style.background = item.bg;
+            card.style.borderColor = item.border;
+            card.style.color = item.color;
+            const label = document.createElement('span');
+            label.textContent = item.label;
+            const value = document.createElement('strong');
+            value.textContent = item.value;
+            card.append(label, value);
+            kpis.appendChild(card);
+        });
+
+        const legend = document.querySelector('#dashboardSection .dashboard-legend').cloneNode(true);
+        const updatedAt = legend.querySelector('#dashboardUpdatedAt');
+        if (updatedAt) updatedAt.removeAttribute('id');
+
+        const table = sourceTable.cloneNode(true);
+        table.removeAttribute('style');
+        table.querySelectorAll('[id]').forEach(element => element.removeAttribute('id'));
+        const footer = document.createElement('div');
+        footer.className = 'dashboard-export-footer';
+        footer.textContent = `NextVac by SVS • ${currentFilteredDashboardData.length} Batch`;
+
+        root.append(header, filters, kpis, legend, table, footer);
+        stage.appendChild(root);
+        document.body.appendChild(stage);
+        return { stage, root, table };
+    }
+
+    function calculateDashboardCanvasScale(width, height, preferredScale) {
+        const maxPixels = 48000000;
+        const maxDimension = 30000;
+        return Math.max(0.55, Math.min(
+            preferredScale,
+            maxDimension / Math.max(width, 1),
+            maxDimension / Math.max(height, 1),
+            Math.sqrt(maxPixels / Math.max(width * height, 1))
+        ));
+    }
+
+    async function renderDashboardExportCanvas(root, preferredScale) {
+        if (typeof html2canvas !== 'function') throw new Error('ไม่สามารถโหลดระบบสร้างรูปภาพได้ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่');
+        if (document.fonts && document.fonts.ready) await document.fonts.ready;
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        const width = Math.ceil(root.scrollWidth);
+        const height = Math.ceil(root.scrollHeight);
+        const scale = calculateDashboardCanvasScale(width, height, preferredScale);
+        return html2canvas(root, {
+            backgroundColor: '#ffffff',
+            scale,
+            useCORS: true,
+            logging: false,
+            width,
+            height,
+            windowWidth: width + 80,
+            windowHeight: Math.min(height + 80, 30000)
+        });
+    }
+
+    function buildDashboardFilename(extension) {
+        const region = document.getElementById('filterRegion').value || 'All-Regions';
+        const farm = document.getElementById('filterFarm').value || 'All-Farms';
+        const stamp = new Date();
+        const pad = value => String(value).padStart(2, '0');
+        const datePart = `${stamp.getFullYear()}${pad(stamp.getMonth() + 1)}${pad(stamp.getDate())}_${pad(stamp.getHours())}${pad(stamp.getMinutes())}`;
+        const safePart = value => String(value).replace(/[\\/:*?"<>|\s]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 55) || 'All';
+        return `NextVac_Dashboard_${safePart(region)}_${safePart(farm)}_${datePart}.${extension}`;
+    }
+
+    function downloadCanvasAsPng(canvas) {
+        return new Promise((resolve, reject) => {
+            canvas.toBlob(blob => {
+                if (!blob) { reject(new Error('ไม่สามารถสร้างไฟล์ PNG ได้')); return; }
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = buildDashboardFilename('png');
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+                resolve();
+            }, 'image/png');
+        });
+    }
+
+    function exportCanvasAsPdf(canvas, root, table) {
+        if (!window.jspdf || !window.jspdf.jsPDF) throw new Error('ไม่สามารถโหลดระบบสร้าง PDF ได้ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่');
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a3', compress: true });
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const margin = 8;
+        const footerHeight = 6;
+        const imageWidthMm = pageWidth - (margin * 2);
+        const maxImageHeightMm = pageHeight - (margin * 2) - footerHeight;
+        const maxSegmentHeight = Math.floor(maxImageHeightMm * canvas.width / imageWidthMm);
+        const canvasPerCssPixel = canvas.width / root.scrollWidth;
+        const rootTop = root.getBoundingClientRect().top;
+        const headerRect = table.querySelector('thead').getBoundingClientRect();
+        const tableHeaderTop = Math.max(0, Math.round((headerRect.top - rootTop) * canvasPerCssPixel));
+        const tableHeaderHeight = Math.max(1, Math.round(headerRect.height * canvasPerCssPixel));
+        const rowBreaks = Array.from(table.querySelectorAll('tbody tr')).map(row => {
+            const rect = row.getBoundingClientRect();
+            return Math.round((rect.bottom - rootTop) * canvasPerCssPixel);
+        }).filter(value => value > 0 && value <= canvas.height);
+        rowBreaks.push(canvas.height);
+
+        let sourceY = 0;
+        let pageNumber = 0;
+        while (sourceY < canvas.height) {
+            const repeatedHeader = pageNumber > 0 && sourceY >= tableHeaderTop + tableHeaderHeight;
+            const availableBodyHeight = Math.max(1, maxSegmentHeight - (repeatedHeader ? tableHeaderHeight : 0));
+            const desiredEnd = Math.min(canvas.height, sourceY + availableBodyHeight);
+            const alignedBreaks = rowBreaks.filter(value => value > sourceY && value <= desiredEnd);
+            let sourceEnd = alignedBreaks.length ? alignedBreaks[alignedBreaks.length - 1] : desiredEnd;
+            if (sourceEnd <= sourceY) sourceEnd = desiredEnd;
+            const bodyHeight = sourceEnd - sourceY;
+            const pageCanvas = document.createElement('canvas');
+            pageCanvas.width = canvas.width;
+            pageCanvas.height = bodyHeight + (repeatedHeader ? tableHeaderHeight : 0);
+            const context = pageCanvas.getContext('2d');
+            context.fillStyle = '#ffffff';
+            context.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+            let drawY = 0;
+            if (repeatedHeader) {
+                context.drawImage(canvas, 0, tableHeaderTop, canvas.width, tableHeaderHeight, 0, 0, canvas.width, tableHeaderHeight);
+                drawY = tableHeaderHeight;
+            }
+            context.drawImage(canvas, 0, sourceY, canvas.width, bodyHeight, 0, drawY, canvas.width, bodyHeight);
+
+            if (pageNumber > 0) pdf.addPage('a3', 'landscape');
+            const imageHeightMm = pageCanvas.height * imageWidthMm / pageCanvas.width;
+            pdf.addImage(pageCanvas.toDataURL('image/jpeg', 0.94), 'JPEG', margin, margin, imageWidthMm, imageHeightMm, undefined, 'FAST');
+            pdf.setFontSize(8);
+            pdf.setTextColor(100, 116, 139);
+            pdf.text(`NextVac Dashboard • หน้า ${pageNumber + 1}`, pageWidth - margin, pageHeight - 5, { align: 'right' });
+            sourceY = sourceEnd;
+            pageNumber++;
+        }
+
+        pdf.save(buildDashboardFilename('pdf'));
+    }
+
+    function setDashboardExportBusy(isBusy, format) {
+        const pdfButton = document.getElementById('btnExportPdf');
+        const pngButton = document.getElementById('btnExportPng');
+        pdfButton.disabled = isBusy || !currentFilteredDashboardData.length;
+        pngButton.disabled = isBusy || !currentFilteredDashboardData.length;
+        pdfButton.innerText = isBusy && format === 'pdf' ? '⏳ กำลังสร้าง PDF...' : '📄 ส่งออก PDF';
+        pngButton.innerText = isBusy && format === 'png' ? '⏳ กำลังสร้าง PNG...' : '🖼️ ส่งออก PNG';
+    }
+
+    async function exportDashboard(format) {
+        let exportStage = null;
+        setDashboardExportBusy(true, format);
+        try {
+            const exportView = createDashboardExportStage();
+            exportStage = exportView.stage;
+            const canvas = await renderDashboardExportCanvas(exportView.root, format === 'png' ? 1.8 : 1.35);
+            if (format === 'png') await downloadCanvasAsPng(canvas);
+            else exportCanvasAsPdf(canvas, exportView.root, exportView.table);
+        } catch (error) {
+            alert(`❌ ส่งออก ${String(format).toUpperCase()} ไม่สำเร็จ\n${error.message || error}`);
+        } finally {
+            if (exportStage) exportStage.remove();
+            setDashboardExportBusy(false, format);
+        }
     }
 
     function updateFarmData() {
@@ -663,10 +1028,7 @@
         btn.innerText = "⏳ กำลังบันทึก...";
         btn.disabled = true;
 
-        fetch(SCRIPT_URL, {
-            method: 'POST',
-            body: JSON.stringify({ action: "updateFarmByVet", sessionToken: currentSessionToken, targetFarm: farm, newUsername: newUser, newPassword: newPass, newLineId: newLine })
-        }).then(res => res.json()).then(data => {
+        postJson({ action: "updateFarmByVet", sessionToken: currentSessionToken, targetFarm: farm, newUsername: newUser, newPassword: newPass, newLineId: newLine }).then(data => {
             if(data.status === "success") {
                 alert("✅ อัปเดตข้อมูลฟาร์มเรียบร้อยแล้ว!");
                 document.getElementById('newFarmUser').value = "";
@@ -845,12 +1207,10 @@
         });
 
         try {
-            const saveResult = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                body: JSON.stringify({
-                    action: "saveTasks",
-                    sessionToken: currentSessionToken,
-                    batchInfo: {
+            const saveResult = await postJson({
+                action: "saveTasks",
+                sessionToken: currentSessionToken,
+                batchInfo: {
                         batchId: batchId,
                         farmName: farm,
                         region: region,
@@ -861,10 +1221,9 @@
                         houseName: houseName,
                         initialAgeWeeks: initialAge,
                         programId: progId
-                    },
-                    tasks: tasksToSave
-                })
-            }).then(res => res.json());
+                },
+                tasks: tasksToSave
+            });
             if (saveResult.status !== "success") throw new Error(saveResult.message || "บันทึกข้อมูลไม่สำเร็จ");
         } catch (err) {
             alert("❌ " + (err.message || "ไม่สามารถบันทึกข้อมูลได้"));
@@ -893,11 +1252,8 @@
         btn.disabled = true;
         btn.style.opacity = "0.7";
 
-        fetch(SCRIPT_URL, { 
-            method: 'POST', 
-            body: JSON.stringify({ action: "sendScheduleCard", sessionToken: currentSessionToken, farmName: currentFarmForCart, cart: scheduleCart }) 
-        })
-        .then(res => res.json()).then(data => {
+        postJson({ action: "sendScheduleCard", sessionToken: currentSessionToken, farmName: currentFarmForCart, cart: scheduleCart })
+        .then(data => {
             if(data.status === "success"){ 
                 btn.innerText = "✅ ส่งการ์ดสำเร็จ!"; 
                 btn.style.background = "#16a34a"; 
