@@ -1307,38 +1307,43 @@
         generateButton.innerText = 'ออกรายงานโปรแกรมวัคซีน';
     }
 
-    function sendScheduleToLine() {
+    async function sendScheduleToLine() {
         if(scheduleCart.length === 0) return;
         const btn = document.getElementById('btnSendLine');
-        btn.innerText = "⏳ กำลังส่งเข้า LINE...";
+        if (btn.disabled) return;
+        btn.innerText = '⏳ กำลังส่งเข้า LINE...';
         btn.disabled = true;
-        btn.style.opacity = "0.7";
-
-        postJson({ action: "sendScheduleCard", sessionToken: currentSessionToken, farmName: currentFarmForCart, cart: scheduleCart })
-        .then(data => {
-            if(data.status === "success"){ 
-                btn.innerText = "✅ ส่งการ์ดสำเร็จ!"; 
-                btn.style.background = "#16a34a"; 
-                scheduleCart = []; 
-                currentFarmForCart = "";
-            } 
-            else { 
-                btn.innerText = "❌ " + (data.message || "เกิดข้อผิดพลาด"); 
-                btn.style.background = "#dc2626"; 
+        btn.style.opacity = '0.7';
+        let retryUnsafe = false;
+        try {
+            const data = await postJson({ action: 'sendScheduleCard', sessionToken: currentSessionToken, farmName: currentFarmForCart, cart: scheduleCart });
+            if (data.status === 'success') {
+                btn.innerText = '✅ LINE API รับคำขอแล้ว';
+                btn.style.background = '#16a34a';
+                scheduleCart = [];
+                currentFarmForCart = '';
+                if (data.notificationLogWarning) alert(data.message + '\nอ้างอิง: ' + (data.notificationRunId || '-'));
+            } else {
+                // Partial/unknown results cannot safely resend the whole cart.
+                retryUnsafe = !!data.retryUnsafe || data.status === 'partial' || data.status === 'unknown';
+                btn.innerText = retryUnsafe ? '⚠️ ตรวจผลการส่งกับผู้ดูแลก่อน' : '❌ LINE ยังไม่รับคำขอ';
+                btn.style.background = retryUnsafe ? '#b45309' : '#dc2626';
+                alert((data.message || 'ส่งคำขอไม่สำเร็จ') + '\nอ้างอิง: ' + (data.notificationRunId || '-'));
             }
-            setTimeout(() => { 
-                btn.innerText = "📲 ส่งการ์ดเข้า LINE"; 
-                btn.style.background = "#0284c7"; 
-                btn.disabled = false; 
-                btn.style.opacity = "1"; 
+        } catch (error) {
+            retryUnsafe = true;
+            btn.innerText = '⚠️ ยังยืนยันผลการส่งไม่ได้';
+            btn.style.background = '#b45309';
+            alert('การเชื่อมต่อขัดข้อง คำขออาจส่งถึง LINE แล้ว กรุณาตรวจกลุ่ม LINE และให้ผู้ดูแลตรวจ Notification_Log ก่อนส่งชุดเดิมซ้ำ');
+        } finally {
+            btn.style.opacity = '1';
+            // No retry loop. Leave the send button disabled on partial/unknown results.
+            if (!retryUnsafe) setTimeout(() => {
+                btn.innerText = '📲 ส่งการ์ดเข้า LINE'; btn.style.background = '#0284c7'; btn.disabled = false;
             }, 5000);
-        }).catch(err => { 
-            btn.innerText = "❌ เชื่อมต่อไม่ได้"; 
-            btn.style.background = "#dc2626"; 
-            btn.disabled = false; 
-            btn.style.opacity = "1"; 
-        });
+        }
     }
+
 </script>
 <script>
 document.getElementById('nvTogglePassword').addEventListener('click', function () {
