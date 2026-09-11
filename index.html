@@ -583,7 +583,11 @@
             farmSelect.options[0].dataset.manager = currentUser.managerName;
             farmSelect.disabled = true;
             document.getElementById('formSection').style.display = 'block';
-            updatePrograms(); 
+            updatePrograms();
+            document.getElementById('vetTabs').style.display = 'flex';
+            document.getElementById('btnTabManage').style.display = 'none';
+            document.getElementById('filterRegionWrap').style.display = 'none';
+            switchTab('dashboard');
 
         } else if (currentUser.role === "Vet") {
             document.getElementById('vetTabs').style.display = 'flex';
@@ -647,10 +651,11 @@
         document.getElementById('btnExportPng').disabled = true;
         tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">⏳ กำลังโหลดข้อมูล...</td></tr>';
         
-        fetchJson(buildApiUrl("getDashboardData"))
+        return fetchJson(buildApiUrl("getDashboardData"))
         .then(data => {
             if(data.status === "success") {
                 currentDashboardData = data.data || [];
+                nvReopenReasons = data.reopenReasons || [];
                 document.getElementById('dashboardUpdatedAt').innerText = `อัปเดตล่าสุด: ${new Date(data.generatedAt || Date.now()).toLocaleString('th-TH')}`;
                 populateDashboardFilters(); 
                 applyDashboardFilters(); 
@@ -774,17 +779,17 @@
         return '<span style="background:#0284c7; color:white; padding:4px 8px; border-radius:4px; font-size:12px; white-space:nowrap;">กำลังดำเนินการ</span>';
     }
 
-    function renderMatrixCell(cell) {
+    function renderMatrixCell(cell, item) {
         if (!cell || cell.status === 'missing') return '<td class="matrix-cell cell-missing">—</td>';
         const targetDate = cell.targetDate ? formatDateThai(cell.targetDate) : '-';
         if (cell.status === 'done') {
             const completed = cell.completedAt ? formatDateThai(cell.completedAt) : targetDate;
-            return `<td class="matrix-cell cell-done"><strong>✅ ทำแล้ว</strong><span class="cell-date">${escapeHtml(completed)}</span></td>`;
+            return `<td class="matrix-cell cell-done"><strong>✅ ทำแล้ว</strong><span class="cell-date">${escapeHtml(completed)}</span>${cell.canReopen && item ? `<button type="button" class="nv-reopen-button" data-task="${escapeHtml(cell.taskId)}" data-batch="${escapeHtml(item.batchId)}" aria-label="แก้สถานะ ${escapeHtml(cell.label)} โรงเรือน ${escapeHtml(item.houseName)}">แก้สถานะ</button>` : ''}</td>`;
         }
         if (cell.status === 'overdue') {
-            return `<td class="matrix-cell cell-overdue"><strong>🚨 เลยกำหนด</strong><span class="cell-date">${escapeHtml(targetDate)}</span></td>`;
+            return `<td class="matrix-cell cell-overdue"><strong>🚨 เลยกำหนด</strong><span class="cell-date">${escapeHtml(targetDate)}</span>${nvCorrectionNote(cell)}</td>`;
         }
-        return `<td class="matrix-cell cell-pending"><strong>⏳ รอ</strong><span class="cell-date">${escapeHtml(targetDate)}</span></td>`;
+        return `<td class="matrix-cell cell-pending"><strong>⏳ รอ</strong><span class="cell-date">${escapeHtml(targetDate)}</span>${nvCorrectionNote(cell)}</td>`;
     }
 
     function renderDashboard(items) {
@@ -823,7 +828,7 @@
                 <td><strong>${escapeHtml(item.batchId)}</strong><br><span style="color:#64748b; font-size:11px;">${escapeHtml(formatDateThai(item.admDate))}</span></td>
                 <td>${escapeHtml(item.swineType)}<br><span style="color:#64748b; font-size:11px;">${escapeHtml(item.programName)} · ${escapeHtml(item.qty)} ตัว</span></td>
                 <td style="text-align:center; white-space:nowrap;"><strong>${escapeHtml(currentAge)}</strong></td>
-                ${matrixColumns.map(column => renderMatrixCell(cellsByKey.get(column.key))).join('')}
+                ${matrixColumns.map(column => renderMatrixCell(cellsByKey.get(column.key), item)).join('')}
                 <td style="text-align: center; min-width:110px;">
                     <div style="background:#e2e8f0; border-radius:10px; width:100%; height:8px; margin-bottom:5px; overflow:hidden;">
                         <div style="background:${item.status === 'Overdue' ? '#dc2626' : '#16a34a'}; width:${item.progress}%; height:100%;"></div>
@@ -918,6 +923,7 @@
         if (updatedAt) updatedAt.removeAttribute('id');
 
         const table = sourceTable.cloneNode(true);
+        table.querySelectorAll('.nv-reopen-button').forEach(button => button.remove());
         table.removeAttribute('style');
         table.querySelectorAll('[id]').forEach(element => element.removeAttribute('id'));
         const footer = document.createElement('div');
@@ -1343,5 +1349,116 @@ document.getElementById('nvTogglePassword').addEventListener('click', function (
   this.setAttribute('aria-pressed', String(visible));
 });
 </script>
+<style>
+.nv-reopen-button {display:block;margin:7px auto 0;padding:6px 10px;border:1px solid #3b7ca1;border-radius:6px;background:white;color:#14517a;cursor:pointer;font:600 14px 'Sarabun',sans-serif;}
+.nv-reopen-note {display:block;margin-top:7px;max-width:210px;white-space:normal;overflow-wrap:anywhere;font-size:14px;line-height:1.5;color:#713f12;text-align:left;}
+#nvReopenDialog {width:min(540px,calc(100vw - 32px));max-height:calc(100svh - 40px);overflow:auto;border:1px solid #cbd5e1;border-radius:16px;padding:26px;box-sizing:border-box;color:#1e293b;font-family:'Sarabun',sans-serif;}
+#nvReopenDialog::backdrop {background:rgba(15,23,42,.55);}
+#nvReopenDialog h2 {text-align:left;font-size:24px;margin-bottom:16px;}
+#nvReopenSummary {white-space:pre-wrap;overflow-wrap:anywhere;background:#f1f5f9;border-radius:8px;padding:14px;line-height:1.7;}
+#nvReopenDetail {width:100%;box-sizing:border-box;min-height:100px;margin-top:8px;padding:10px;border:1px solid #cbd5e1;border-radius:8px;font:16px 'Sarabun',sans-serif;}
+.nv-reopen-actions {display:flex;gap:12px;margin-top:20px;justify-content:flex-end;flex-wrap:wrap;}
+.nv-reopen-actions button {padding:12px 16px;border:1px solid #cbd5e1;border-radius:8px;font:600 16px 'Sarabun',sans-serif;cursor:pointer;}
+#nvReopenSave {background:#0369a1;color:white;border-color:#0369a1;}
+.nv-reopen-actions button:disabled {opacity:.6;cursor:wait;}
+#nvReopenError {color:#b91c1c;white-space:pre-wrap;}
+#nvReopenDialog :focus-visible {outline:3px solid #0284c7;outline-offset:2px;}
+.dashboard-export .nv-reopen-button {display:none!important;}
+@media print {.nv-reopen-button,#nvReopenDialog {display:none!important;}}
+</style>
+<dialog id="nvReopenDialog" aria-labelledby="nvReopenTitle" class="no-print">
+  <h2 id="nvReopenTitle">แก้สถานะ “ทำแล้ว”</h2>
+  <div id="nvReopenSummary"></div>
+  <p>เปลี่ยนกลับเป็น <strong>รอดำเนินการ</strong> โดยเก็บประวัติการยืนยันเดิมไว้</p>
+  <form id="nvReopenForm">
+    <label for="nvReopenReason">เหตุผลในการแก้ไข <span aria-hidden="true">*</span></label>
+    <select id="nvReopenReason" required><option value="">— เลือกเหตุผล —</option></select>
+    <label for="nvReopenDetail" id="nvReopenDetailLabel">รายละเอียดเพิ่มเติม (ไม่บังคับ)</label>
+    <textarea id="nvReopenDetail" maxlength="1000" aria-describedby="nvReopenHint" placeholder="ระบุรายละเอียดเพิ่มเติม"></textarea>
+    <p id="nvReopenHint">ไม่เกิน 1,000 ตัวอักษร</p>
+    <p id="nvReopenError" role="alert"></p>
+    <div class="nv-reopen-actions"><button type="button" id="nvReopenCancel">ยกเลิก</button><button type="submit" id="nvReopenSave">ยืนยันเปลี่ยนเป็นรอดำเนินการ</button></div>
+  </form>
+</dialog>
+<script>
+let nvReopenReasons = [];
+let nvReopenSelection = null;
+let nvReopenBusy = false;
+const nvReopenDialog = document.getElementById('nvReopenDialog');
+
+function nvCorrectionNote(cell) {
+    if (!cell || !cell.reopenNote) return '';
+    return `<span class="nv-reopen-note">แก้สถานะ: ${escapeHtml(cell.reopenNote.reason)}${cell.reopenNote.detail ? '<br>' + escapeHtml(cell.reopenNote.detail) : ''}</span>`;
+}
+
+document.getElementById('dashboardTableBody').addEventListener('click', event => {
+    const button = event.target.closest('.nv-reopen-button');
+    if (!button || nvReopenBusy) return;
+    const item = currentDashboardData.find(row => row.batchId === button.dataset.batch);
+    const cell = item && (item.matrix || []).find(value => value.taskId === button.dataset.task && value.status === 'done');
+    if (!item || !cell || !cell.canReopen) return;
+    nvReopenSelection = {taskId:cell.taskId, expectedVersion:cell.completionVersion};
+    document.getElementById('nvReopenSummary').textContent = `ฟาร์ม: ${item.farmName}\nโรงเรือน: ${item.houseName}\nBatch: ${item.batchId}\nงาน: ${cell.vaccineName || cell.label}\nยืนยันทำแล้ว: ${cell.completedAt ? formatDateThai(cell.completedAt) : 'ไม่ระบุวันที่'}\nสถานะเดิม: ทำแล้ว → สถานะใหม่: รอดำเนินการ`;
+    const select = document.getElementById('nvReopenReason');
+    select.replaceChildren(new Option('— เลือกเหตุผล —',''));
+    nvReopenReasons.forEach(reason => select.add(new Option(reason.label, reason.id)));
+    document.getElementById('nvReopenForm').reset();
+    document.getElementById('nvReopenError').textContent = '';
+    nvUpdateReasonDetail();
+    nvReopenDialog.showModal();
+    select.focus();
+});
+
+function nvUpdateReasonDetail() {
+    const reason = nvReopenReasons.find(item => item.id === document.getElementById('nvReopenReason').value);
+    const required = !!(reason && reason.detailRequired);
+    const input = document.getElementById('nvReopenDetail');
+    input.required = required;
+    input.setCustomValidity('');
+    document.getElementById('nvReopenDetailLabel').textContent = 'รายละเอียดเพิ่มเติม' + (required ? ' (จำเป็น)' : ' (ไม่บังคับ)');
+    document.getElementById('nvReopenHint').textContent = reason && reason.id === 'INCOMPLETE'
+        ? 'เช่น “ทำแล้ว 80 ตัว เหลือ 20 ตัว” สถานะรอหมายถึงงานยังไม่ครบ ไม่ใช่ให้ทำซ้ำทั้งหมด'
+        : 'ไม่เกิน 1,000 ตัวอักษร';
+}
+document.getElementById('nvReopenReason').addEventListener('change', nvUpdateReasonDetail);
+document.getElementById('nvReopenDetail').addEventListener('input', event => event.target.setCustomValidity(''));
+document.getElementById('nvReopenCancel').addEventListener('click', () => {if (!nvReopenBusy) nvReopenDialog.close();});
+nvReopenDialog.addEventListener('cancel', event => {if (nvReopenBusy) event.preventDefault();});
+document.getElementById('nvReopenForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    if (nvReopenBusy || !nvReopenSelection) return;
+    const detailInput = document.getElementById('nvReopenDetail');
+    if (detailInput.required && !detailInput.value.trim()) {
+        detailInput.setCustomValidity('กรุณากรอกรายละเอียด ไม่ใช่ช่องว่าง'); detailInput.reportValidity(); return;
+    }
+    const form = event.currentTarget;
+    if (!form.reportValidity()) return;
+    const save = document.getElementById('nvReopenSave');
+    const cancel = document.getElementById('nvReopenCancel');
+    const reasonSelect = document.getElementById('nvReopenReason');
+    const payload = {action:'reopenTask', sessionToken:currentSessionToken, ...nvReopenSelection,
+        reasonId:reasonSelect.value, detail:detailInput.value.trim()};
+    nvReopenBusy = true; save.disabled = cancel.disabled = reasonSelect.disabled = detailInput.disabled = true;
+    save.textContent = 'กำลังบันทึก…';
+    document.getElementById('nvReopenError').textContent = '';
+    try {
+        const result = await postJson(payload);
+        if (result.status !== 'success') {
+            document.getElementById('nvReopenError').textContent = (result.message || 'แก้สถานะไม่สำเร็จ') + '\nอ้างอิง: ' + (result.actionRequestId || '-');
+            return;
+        }
+        nvReopenDialog.close();
+        alert(result.message || 'เปลี่ยนกลับเป็นรอดำเนินการแล้ว');
+        await loadDashboardData();
+    } catch (error) {
+        // The request may have committed before the connection failed. Do not retry automatically.
+        document.getElementById('nvReopenError').textContent = 'ยังยืนยันผลไม่ได้ กรุณาปิดหน้าต่างและโหลด Dashboard ใหม่เพื่อตรวจสถานะก่อนทำซ้ำ';
+    } finally {
+        nvReopenBusy = false; save.disabled = cancel.disabled = reasonSelect.disabled = detailInput.disabled = false;
+        save.textContent = 'ยืนยันเปลี่ยนเป็นรอดำเนินการ';
+    }
+});
+</script>
+
 </body>
 </html>
