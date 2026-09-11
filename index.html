@@ -483,7 +483,11 @@
         const rawText = (await response.text()).replace(/^\uFEFF/, '').trim();
         if (!rawText) throw new Error(`เซิร์ฟเวอร์ไม่ส่งข้อมูลกลับมา (HTTP ${response.status})`);
         try {
-            return normalizeApiText(JSON.parse(rawText));
+            const result = normalizeApiText(JSON.parse(rawText));
+            if (result.auditWarning) {
+                alert('⚠️ ' + result.auditWarning + '\nอ้างอิง: ' + (result.actionRequestId || '-'));
+            }
+            return result;
         } catch (error) {
             if (/^<!doctype|^<html/i.test(rawText)) {
                 throw new Error(`GAS ส่งหน้า HTML กลับมาแทน JSON (HTTP ${response.status}) กรุณาตรวจ Deployment และหน้า Executions ใน Apps Script`);
