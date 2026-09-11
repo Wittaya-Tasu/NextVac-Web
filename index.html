@@ -221,7 +221,80 @@
         <button id="btnTabDashboard" class="tab-btn tab-active" onclick="switchTab('dashboard')">📊 แดชบอร์ดภาพรวม</button>
         <button id="btnTabCreate" class="tab-btn tab-inactive" onclick="switchTab('create')">สร้างโปรแกรมวัคซีน</button>
         <button id="btnTabManage" class="tab-btn tab-inactive" onclick="switchTab('manage')">จัดการรหัสผ่าน / LINE</button>
+        <button id="btnTabHealth" class="tab-btn tab-inactive" style="display:none" onclick="switchTab('health')">สถานะระบบ</button>
     </div>
+<section id="healthSection" class="container dashboard-container nv-health" style="display:none" aria-labelledby="nvHealthTitle">
+  <div class="nvh-heading"><div><span class="nvh-eyebrow">NEXTVAC · ADMIN</span><h2 id="nvHealthTitle">สถานะระบบ</h2><p id="nvHealthChecked">ยังไม่ได้ตรวจสอบ</p></div><button type="button" id="nvHealthReload" class="nvh-primary">โหลดข้อมูลใหม่</button></div>
+  <p id="nvHealthMessage" role="status" aria-live="polite"></p>
+  <div id="nvHealthData" hidden>
+    <div id="nvHealthOverview" class="nvh-overview"></div>
+    <section class="nvh-block" aria-labelledby="nvHealthJobsTitle"><h3 id="nvHealthJobsTitle">งานอัตโนมัติ</h3><div id="nvHealthJobs" class="nvh-jobs"></div><p id="nvHealthTriggerNote" class="nvh-note"></p><details><summary>ประวัติการทำงานล่าสุด</summary><div id="nvHealthRuns" class="nvh-scroll" tabindex="0" aria-label="ตารางประวัติการทำงาน"></div></details></section>
+    <section class="nvh-block" aria-labelledby="nvHealthLineTitle"><h3 id="nvHealthLineTitle">ผลส่ง LINE</h3>
+      <div class="nvh-filters"><label>ช่วงเวลา<select id="nvHealthDays"><option value="1">24 ชั่วโมงล่าสุด</option><option value="7" selected>7 วันล่าสุด</option><option value="30">30 วันล่าสุด</option></select></label><label>ฟาร์ม<select id="nvHealthFarm"><option value="">ทุกฟาร์ม</option></select></label><label>ประเภทข้อความ<select id="nvHealthType"><option value="">ทุกประเภท</option></select></label><button type="button" id="nvHealthApply">แสดงผล</button></div>
+      <div id="nvHealthCounts" class="nvh-counts"></div><p id="nvHealthLimit" class="nvh-note"></p>
+      <div id="nvHealthNotifications" class="nvh-scroll" tabindex="0" aria-label="ตารางผลส่ง LINE"></div>
+      <div class="nvh-pages"><button type="button" id="nvHealthPrev">ก่อนหน้า</button><span id="nvHealthPage"></span><button type="button" id="nvHealthNext">ถัดไป</button></div>
+      <p class="nvh-note">นับหนึ่งครั้งต่อคำขอ ไม่ใช่จำนวนผู้รับหรือยอดโควตา • LINE API รับคำขอแล้ว ยังไม่ยืนยันว่าผู้รับได้รับหรืออ่าน</p>
+    </section>
+    <section class="nvh-block" aria-labelledby="nvHealthIssuesTitle"><h3 id="nvHealthIssuesTitle">เหตุการณ์ที่ต้องตรวจสอบ</h3><p class="nvh-note">ผล LINE ตามตัวกรองด้านบน รวมกับข้อผิดพลาดจาก Action Log และรอบงานล่าสุด คำเตือนเก่าเป็นประวัติ ไม่ได้ยืนยันว่าปัญหายังเกิดอยู่</p><div id="nvHealthIssues" class="nvh-scroll" tabindex="0" aria-label="ตารางเหตุการณ์ที่ต้องตรวจสอบ"></div></section>
+    <details class="nvh-block"><summary>การอ่านฐานข้อมูลและขอบเขตการตรวจ</summary><div id="nvHealthChecks" class="nvh-scroll" tabindex="0" aria-label="ตารางตรวจฐานข้อมูล"></div><p class="nvh-note">ตรวจ ณ เวลาที่กดโหลดข้อมูล ระบบนี้ไม่ได้เฝ้าระวังจากภายนอก หาก GAS ติดต่อไม่ได้จะแสดงว่าโหลดสถานะไม่สำเร็จ และไม่ใช้ผลเก่ายืนยันว่าระบบปกติ</p></details>
+  </div>
+</section>
+<style>
+.nv-health{color:#18344b;font-family:'Sarabun',sans-serif;font-size:16px;line-height:1.6;padding:28px!important}
+.nv-health [hidden]{display:none!important}.nv-health h2{color:#103366;text-align:left;margin:2px 0 0;font-size:28px}.nv-health h3{margin:0 0 16px;font-size:21px;color:#103366}.nv-health p{margin:6px 0 14px}.nvh-eyebrow{color:#46627a;font-size:14px;font-weight:700;letter-spacing:.08em}.nvh-heading{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:20px;flex-wrap:wrap}.nv-health button,.nv-health select{font:inherit;min-height:44px;border:1px solid #b6c8d7;border-radius:8px;padding:9px 15px;background:white;color:#173b59;cursor:pointer}.nv-health button:disabled{opacity:.55;cursor:default}.nv-health .nvh-primary{background:#0369a1;color:white;border-color:#0369a1}.nv-health :focus-visible{outline:3px solid #0284c7;outline-offset:3px}.nvh-overview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.nvh-stat,.nvh-job{border:1px solid #d7e3ec;border-radius:12px;padding:18px;background:#f8fbfd}.nvh-stat strong{display:block;color:#103366;font-size:22px;margin-top:6px}.nvh-block{margin-top:26px;padding-top:24px;border-top:1px solid #d7e3ec}.nvh-jobs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.nvh-job h4{margin:0 0 10px;font-size:18px}.nvh-job dl{display:grid;grid-template-columns:125px 1fr;gap:5px 12px;margin-bottom:0}.nvh-job dt{color:#526578}.nvh-job dd{margin:0;overflow-wrap:anywhere}.nvh-badge{display:inline-block;border-radius:6px;padding:3px 9px;font-size:14px;font-weight:700;background:#e2e8f0;color:#334155}.nvh-good{background:#d9f6e4;color:#166534}.nvh-warn{background:#fff0c2;color:#854d0e}.nvh-bad{background:#fee2e2;color:#991b1b}.nvh-note{font-size:14px;color:#526578}.nvh-filters{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:18px}.nvh-filters label{display:flex;flex-direction:column;gap:5px;min-width:170px;flex:1}.nvh-filters select{width:100%;max-width:100%;background:white}.nvh-counts{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}.nvh-counts .nvh-stat{padding:12px}.nvh-scroll{overflow:auto;border:1px solid #d7e3ec;border-radius:9px;margin-top:12px;max-height:560px}.nv-health table{border-collapse:collapse;width:100%;font-size:14px;margin:0;min-width:680px}.nv-health th{background:#103366;color:white;text-align:left;padding:12px;white-space:nowrap}.nv-health td{padding:12px;border-bottom:1px solid #e2e8f0;vertical-align:top;white-space:normal;overflow-wrap:anywhere;max-width:330px}.nv-health tbody tr:nth-child(even){background:#f8fbfd}.nv-health small{display:block;color:#526578;font-size:14px;overflow-wrap:anywhere}.nvh-pages{display:flex;justify-content:flex-end;align-items:center;gap:12px;margin-top:12px}.nv-health summary{cursor:pointer;color:#103366;font-weight:700;min-height:40px}.nvh-error{background:#fff0ee;color:#991b1b;border-radius:8px;padding:14px}.nvh-job .nvh-note{margin-top:14px}.nvh-empty{padding:18px;color:#526578}
+@media(max-width:900px){.nvh-counts{grid-template-columns:repeat(2,minmax(0,1fr))}.nvh-overview{grid-template-columns:1fr}.nvh-jobs{grid-template-columns:1fr}}
+@media(max-width:520px){.nv-health{padding:16px!important}.nvh-heading>button{width:100%}.nvh-filters label{min-width:100%}.nvh-job dl{grid-template-columns:1fr}.nvh-job dd{margin-bottom:6px}.nvh-pages{justify-content:center}.nv-health h2{font-size:25px}}
+</style>
+<script>
+let nvHealthBusy=false,nvHealthPage=1,nvHealthPages=1;
+const nvHealthLabels={WAITING:'รอการทำงานครั้งแรก',NO_RECENT_RUN:'ยังไม่พบรอบอัตโนมัติ',STALE:'ไม่พบรอบใหม่เกินเวลาที่เฝ้าระวัง',UNFINISHED:'เริ่มแล้ว — ยังไม่พบผลจบ',RUNNING:'กำลังทำงาน',STARTED:'เริ่มแล้ว — ยังไม่พบผลจบ',SUCCESS:'ทำงานสำเร็จ',NO_WORK:'สำเร็จ — ไม่มีงานต้องแจ้ง',ATTENTION:'ทำงานจบ — มีรายการต้องตรวจสอบ',FAILED:'ทำงานผิดพลาด',API_ACCEPTED:'API รับคำขอแล้ว',API_REJECTED:'API ปฏิเสธ',UNKNOWN:'ยังยืนยันผลไม่ได้',NOT_SENT:'ไม่ได้ส่ง',REQUEST_STARTED:'ยังไม่พบผลจบ',REJECTED:'ปฏิเสธรายการ',UNCERTAIN:'ผลยังไม่แน่นอน',WARNING:'คำเตือน',OK:'อ่านได้',MISSING:'ไม่พบชีต',EMPTY_SCHEMA:'ไม่มีหัวคอลัมน์',SCHEMA_MISMATCH:'หัวคอลัมน์ไม่ตรง',READ_FAILED:'อ่านไม่สำเร็จ'};
+const nvHealthTypes={SCHEDULE_CARD:'การ์ดโปรแกรมวัคซีน',DAILY_DIGEST:'แจ้งเตือนประจำวัน',EVENING_PROGRESS:'สรุปรอบเย็น',TASK_CONFIRMATION_REPLY:'ตอบกลับการยืนยันงาน',GET_ID_REPLY:'ตอบกลับ get_id'};
+function nvhEl(tag,text,cls){const e=document.createElement(tag);if(text!==undefined)e.textContent=String(text);if(cls)e.className=cls;return e;}
+function nvhDate(v){if(!v)return '—';const d=new Date(v);return isNaN(d.getTime())?'—':d.toLocaleString('th-TH',{timeZone:'Asia/Bangkok',year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});}
+function nvhBadge(code){const good=['SUCCESS','NO_WORK','API_ACCEPTED','OK'].includes(code),bad=['FAILED','API_REJECTED','MISSING','SCHEMA_MISMATCH','READ_FAILED','EMPTY_SCHEMA'].includes(code);return nvhEl('span',nvHealthLabels[code]||code,'nvh-badge '+(good?'nvh-good':bad?'nvh-bad':'nvh-warn'));}
+function nvhStat(label,value){const e=nvhEl('div',undefined,'nvh-stat');e.append(nvhEl('span',label),nvhEl('strong',value));return e;}
+function nvhTable(id,headers,rows,empty){const host=document.getElementById(id);host.replaceChildren();if(!rows.length){host.append(nvhEl('p',empty||'ยังไม่มีข้อมูล','nvh-empty'));return;}const table=nvhEl('table'),thead=nvhEl('thead'),tr=nvhEl('tr'),body=nvhEl('tbody');headers.forEach(h=>{const th=nvhEl('th',h);th.scope='col';tr.append(th);});thead.append(tr);rows.forEach(values=>{const row=nvhEl('tr');values.forEach(v=>{const td=nvhEl('td');if(v&&typeof v==='object'&&v.nodeType)td.append(v);else td.textContent=v===undefined?'—':String(v);row.append(td);});body.append(row);});table.append(thead,body);host.append(table);}
+function nvhRef(text,ref){const e=nvhEl('div',text);if(ref)e.append(nvhEl('small',ref));return e;}
+function nvhOptions(id,values,title,names){const el=document.getElementById(id),old=el.value;el.replaceChildren(new Option(title,''));values.forEach(v=>el.add(new Option(names&&names[v]?names[v]:v,v)));if(old&&!values.includes(old))el.add(new Option(old,old));el.value=old;}
+function nvhRender(d){
+ document.getElementById('nvHealthChecked').textContent='ตรวจล่าสุด: '+nvhDate(d.checkedAt)+' · เวลาไทย';
+ const failed=d.checks.filter(c=>c.status!=='OK'),jobs=d.jobs;
+ document.getElementById('nvHealthOverview').replaceChildren(nvhStat('การเชื่อมต่อ GAS','ติดต่อได้'),nvhStat('การอ่านฐานข้อมูล',failed.length?'ต้องตรวจ '+failed.length+' ชีต':'อ่านชีตที่ตรวจได้ครบ'),nvhStat('LINE Token',d.lineTokenConfigured?'ตั้งค่าไว้แล้ว':'ยังไม่พบการตั้งค่า'));
+ const jhost=document.getElementById('nvHealthJobs');jhost.replaceChildren();
+ jobs.forEach(j=>{const e=nvhEl('article',undefined,'nvh-job');e.append(nvhEl('h4',j.job==='triggerDailyAlerts'?'แจ้งเตือนประจำวัน':'สรุปความคืบหน้ารอบเย็น'),nvhBadge(j.state));const dl=nvhEl('dl'),r=j.automatic;const pairs=[['เริ่มอัตโนมัติ',nvhDate(r&&r.startedAt)],['จบอัตโนมัติ',nvhDate(r&&r.finishedAt)],['ระยะเวลา',r&&r.finishedAt?(Number(r.durationMs)/1000).toFixed(1)+' วินาที':'—'],['จำนวนคำขอ',r&&r.finishedAt&&r.result!=='FAILED'?r.requests:'—'],['Trigger ที่ตรวจพบ',j.visibleTriggerCount===null?'ตรวจรายการไม่ได้':j.visibleTriggerCount]];pairs.forEach(p=>dl.append(nvhEl('dt',p[0]),nvhEl('dd',p[1])));e.append(dl);if(r&&r.runId)e.append(nvhEl('small','Run: '+r.runId));if(r&&r.logWarning)e.append(nvhEl('p','มีคำเตือนการบันทึก Log โปรดตรวจ Executions','nvh-note'));if(j.manual)e.append(nvhEl('p','Run ด้วยมือล่าสุด: '+nvhDate(j.manual.startedAt)+' · '+(nvHealthLabels[j.manual.result]||j.manual.result),'nvh-note'));if(j.visibleTriggerCount===0)e.append(nvhEl('p','ไม่พบ Trigger ในบัญชีที่รันเว็บ ตรวจบัญชีผู้สร้าง Trigger ใน Apps Script','nvh-note'));if(j.visibleTriggerCount>1)e.append(nvhEl('p','พบหลาย Trigger สำหรับฟังก์ชันเดียว โปรดตรวจว่าเป็นการตั้งค่าที่ต้องการ','nvh-note'));jhost.append(e);});
+ document.getElementById('nvHealthTriggerNote').textContent='เฝ้าดูงานรายวัน: เตือนเมื่อไม่พบรอบใหม่เกิน '+d.maxGapHours+' ชั่วโมง โดยไม่คาดเดาเวลาส่งที่ตั้งไว้ · ตรวจรายการ Trigger ได้เฉพาะบัญชีที่รันเว็บ · การ Run ด้วยมือไม่นับเป็นรอบอัตโนมัติ';
+ nvhTable('nvHealthRuns',['เริ่มงาน','งาน / Run ID','ที่มา','ผล','จบงาน','ระยะเวลา'],d.recentRuns.map(r=>[nvhDate(r.startedAt),nvhRef(r.job,r.runId),r.invocation==='TRIGGER'?'อัตโนมัติ':'Run ด้วยมือ',nvhBadge(r.result),nvhDate(r.finishedAt),r.finishedAt?(r.durationMs/1000).toFixed(1)+' วินาที':'—']),'รอการทำงานครั้งแรกหลังติดตั้ง');
+ nvhOptions('nvHealthFarm',d.notifications.farms,'ทุกฟาร์ม');nvhOptions('nvHealthType',d.notifications.types,'ทุกประเภท',nvHealthTypes);
+ const logCheck=d.checks.find(c=>c.name==='Notification_Log'),available=logCheck&&logCheck.status==='OK',c=d.notifications.counts;
+ document.getElementById('nvHealthCounts').replaceChildren(...[['API รับคำขอแล้ว',c.accepted],['API ปฏิเสธ',c.rejected],['ยังยืนยันไม่ได้',c.unknown],['ไม่ได้ส่ง',c.notSent],['ยังไม่พบผลจบ',c.pending]].map(p=>nvhStat(p[0],available?p[1]:'—')));
+ document.getElementById('nvHealthLimit').textContent=!available?'ยังอ่าน Notification_Log ไม่ได้ จึงสรุปผลส่งไม่ได้':d.notifications.truncated?'ผลรวมเฉพาะข้อมูลใน 5,000 แถวล่าสุดของ Notification_Log ที่ตรงตัวกรอง อาจไม่ครอบคลุมทั้งช่วงเวลา':c.total+' คำขอที่ตรงตัวกรอง';
+ nvhTable('nvHealthNotifications',['เวลา','ฟาร์ม / ปลายทาง','ประเภท','ผล','HTTP','รายละเอียด / อ้างอิง'],d.notifications.rows.map(r=>[nvhDate(r.time),nvhRef(r.farm||'ไม่ระบุฟาร์ม',r.target),nvHealthTypes[r.type]||r.type,nvhBadge(r.result),r.http||'—',nvhRef(r.summary||r.code||'—','Notification: '+r.id+' | Run: '+r.runId+(r.requestId?' | LINE: '+r.requestId:''))]),available?'ไม่มีคำขอที่ตรงตัวกรอง':'ยังอ่านข้อมูลไม่ได้');
+ nvHealthPage=d.notifications.page;nvHealthPages=d.notifications.pages;
+ document.getElementById('nvHealthPage').textContent='หน้า '+nvHealthPage+' / '+nvHealthPages;
+ nvhTable('nvHealthIssues',['เวลา','แหล่งข้อมูล','เหตุการณ์','ผล','สิ่งที่ควรตรวจ / อ้างอิง'],d.issues.map(r=>[nvhDate(r.time),r.source,r.event,nvhBadge(r.result),nvhRef(r.detail,r.reference)]),'ไม่พบเหตุการณ์ในข้อมูลที่อ่านได้ โปรดดูขอบเขตการตรวจด้านล่าง');
+ nvhTable('nvHealthChecks',['ชีต','ผลตรวจ','ขอบเขต'],d.checks.map(c=>[c.name,nvhBadge(c.status),c.scanned===undefined?'การอ่านชีต / หัวคอลัมน์':c.scanned+' / '+c.totalRows+' แถวข้อมูล'+(c.truncated?' · อ่านเฉพาะส่วนล่าสุด':'')]));
+ document.getElementById('nvHealthData').hidden=false;
+}
+async function nvLoadHealth(page=1){
+ if(nvHealthBusy||!currentUser||currentUser.role!=='Admin')return;
+ nvHealthBusy=true;const token=currentSessionToken,msg=document.getElementById('nvHealthMessage');
+ document.getElementById('nvHealthData').hidden=true;msg.className='';msg.textContent='กำลังตรวจสถานะระบบ…';
+ const controls=['nvHealthReload','nvHealthApply','nvHealthPrev','nvHealthNext','nvHealthDays','nvHealthFarm','nvHealthType'];controls.forEach(id=>document.getElementById(id).disabled=true);
+ try{const d=await postJson({action:'getSystemHealth',sessionToken:token,days:Number(document.getElementById('nvHealthDays').value),farm:document.getElementById('nvHealthFarm').value,type:document.getElementById('nvHealthType').value,page});
+   if(token!==currentSessionToken||!currentUser||currentUser.role!=='Admin')return;
+   if(d.status!=='success')throw new Error('HEALTH_UNAVAILABLE');
+   nvhRender(d);msg.textContent='';
+ }catch(err){document.getElementById('nvHealthData').hidden=true;document.getElementById('nvHealthChecked').textContent='การตรวจครั้งนี้ไม่สำเร็จ';msg.className='nvh-error';msg.textContent='โหลดสถานะไม่สำเร็จ จึงยังยืนยันสถานะระบบไม่ได้ กรุณาลองโหลดใหม่ หากยังไม่สำเร็จ ให้ตรวจ Deployment, Executions และสิทธิ์ Admin ปัจจุบัน';}
+ finally{nvHealthBusy=false;controls.forEach(id=>document.getElementById(id).disabled=false);document.getElementById('nvHealthPrev').disabled=nvHealthPage<=1;document.getElementById('nvHealthNext').disabled=nvHealthPage>=nvHealthPages;}
+}
+document.getElementById('nvHealthReload').addEventListener('click',()=>nvLoadHealth(nvHealthPage));
+document.getElementById('nvHealthApply').addEventListener('click',()=>nvLoadHealth(1));
+document.getElementById('nvHealthPrev').addEventListener('click',()=>nvLoadHealth(nvHealthPage-1));
+document.getElementById('nvHealthNext').addEventListener('click',()=>nvLoadHealth(nvHealthPage+1));
+document.getElementById('nvHealthDays').addEventListener('change',()=>{document.getElementById('nvHealthFarm').value='';document.getElementById('nvHealthType').value='';nvLoadHealth(1);});
+</script>
+
 
     <div class="container dashboard-container" id="dashboardSection" style="display:none;">
         <h2>📊 แดชบอร์ดติดตามความคืบหน้า (Real-time)</h2>
@@ -563,6 +636,7 @@
     }
 
     function setupRoleUI() {
+        document.getElementById('btnTabHealth').style.display = currentUser.role === 'Admin' ? '' : 'none';
         const regSelect = document.getElementById('regionSelect');
         const farmSelect = document.getElementById('farmSelect');
         regSelect.innerHTML = '<option value="">-- เลือกภาค --</option>';
@@ -633,6 +707,10 @@
     }
 
     function switchTab(tabName) {
+        if(tabName === 'health' && (!currentUser || currentUser.role !== 'Admin')) return;
+        document.getElementById('btnTabHealth').className = tabName === 'health' ? 'tab-btn tab-active' : 'tab-btn tab-inactive';
+        document.getElementById('healthSection').style.display = tabName === 'health' ? 'block' : 'none';
+        if(tabName === 'health') nvLoadHealth();
         document.getElementById('btnTabDashboard').className = tabName === 'dashboard' ? "tab-btn tab-active" : "tab-btn tab-inactive";
         document.getElementById('btnTabCreate').className = tabName === 'create' ? "tab-btn tab-active" : "tab-btn tab-inactive";
         document.getElementById('btnTabManage').className = tabName === 'manage' ? "tab-btn tab-active" : "tab-btn tab-inactive";
