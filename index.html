@@ -235,6 +235,13 @@
   <div id="nvHealthData" hidden>
     <div id="nvHealthOverview" class="nvh-overview"></div>
     <section class="nvh-block" aria-labelledby="nvHealthJobsTitle"><h3 id="nvHealthJobsTitle">งานอัตโนมัติ</h3><div id="nvHealthJobs" class="nvh-jobs"></div><p id="nvHealthTriggerNote" class="nvh-note"></p><details><summary>ประวัติการทำงานล่าสุด</summary><div id="nvHealthRuns" class="nvh-scroll" tabindex="0" aria-label="ตารางประวัติการทำงาน"></div></details></section>
+    <section class="nvh-block" aria-labelledby="nvBackupTitle">
+      <div class="nvh-heading"><h3 id="nvBackupTitle">การสำรองข้อมูล</h3><button type="button" id="nvBackupNow" class="nvh-primary" disabled>สำรองข้อมูลตอนนี้</button></div>
+      <p id="nvBackupMessage" role="status" aria-live="polite"></p>
+      <div id="nvBackupOverview" class="nvh-overview"></div>
+      <p id="nvBackupNote" class="nvh-note"></p><div id="nvBackupLinks"></div>
+      <details><summary>ประวัติสำรองล่าสุด</summary><div id="nvBackupHistory" class="nvh-scroll"></div></details>
+    </section>
     <section class="nvh-block" aria-labelledby="nvHealthLineTitle"><h3 id="nvHealthLineTitle">ผลส่ง LINE</h3>
       <div class="nvh-filters"><label>ช่วงเวลา<select id="nvHealthDays"><option value="1">24 ชั่วโมงล่าสุด</option><option value="7" selected>7 วันล่าสุด</option><option value="30">30 วันล่าสุด</option></select></label><label>ฟาร์ม<select id="nvHealthFarm"><option value="">ทุกฟาร์ม</option></select></label><label>ประเภทข้อความ<select id="nvHealthType"><option value="">ทุกประเภท</option></select></label><button type="button" id="nvHealthApply">แสดงผล</button></div>
       <div id="nvHealthCounts" class="nvh-counts"></div><p id="nvHealthLimit" class="nvh-note"></p>
@@ -280,20 +287,65 @@ function nvhRender(d){
  document.getElementById('nvHealthPage').textContent='หน้า '+nvHealthPage+' / '+nvHealthPages;
  nvhTable('nvHealthIssues',['เวลา','แหล่งข้อมูล','เหตุการณ์','ผล','สิ่งที่ควรตรวจ / อ้างอิง'],d.issues.map(r=>[nvhDate(r.time),r.source,r.event,nvhBadge(r.result),nvhRef(r.detail,r.reference)]),'ไม่พบเหตุการณ์ในข้อมูลที่อ่านได้ โปรดดูขอบเขตการตรวจด้านล่าง');
  nvhTable('nvHealthChecks',['ชีต','ผลตรวจ','ขอบเขต'],d.checks.map(c=>[c.name,nvhBadge(c.status),c.scanned===undefined?'การอ่านชีต / หัวคอลัมน์':c.scanned+' / '+c.totalRows+' แถวข้อมูล'+(c.truncated?' · อ่านเฉพาะส่วนล่าสุด':'')]));
+ nvbRender(d.backup);
  document.getElementById('nvHealthData').hidden=false;
 }
 async function nvLoadHealth(page=1){
- if(nvHealthBusy||!currentUser||currentUser.role!=='Admin')return;
+ if(nvHealthBusy||nvBackupBusy||!currentUser||currentUser.role!=='Admin')return;
  nvHealthBusy=true;const token=currentSessionToken,msg=document.getElementById('nvHealthMessage');
  document.getElementById('nvHealthData').hidden=true;msg.className='';msg.textContent='กำลังตรวจสถานะระบบ…';
- const controls=['nvHealthReload','nvHealthApply','nvHealthPrev','nvHealthNext','nvHealthDays','nvHealthFarm','nvHealthType'];controls.forEach(id=>document.getElementById(id).disabled=true);
+ const controls=['nvHealthReload','nvHealthApply','nvHealthPrev','nvHealthNext','nvHealthDays','nvHealthFarm','nvHealthType','nvBackupNow'];controls.forEach(id=>document.getElementById(id).disabled=true);
  try{const d=await postJson({action:'getSystemHealth',sessionToken:token,days:Number(document.getElementById('nvHealthDays').value),farm:document.getElementById('nvHealthFarm').value,type:document.getElementById('nvHealthType').value,page});
    if(token!==currentSessionToken||!currentUser||currentUser.role!=='Admin')return;
    if(d.status!=='success')throw new Error('HEALTH_UNAVAILABLE');
    nvhRender(d);msg.textContent='';
  }catch(err){document.getElementById('nvHealthData').hidden=true;document.getElementById('nvHealthChecked').textContent='การตรวจครั้งนี้ไม่สำเร็จ';msg.className='nvh-error';msg.textContent='โหลดสถานะไม่สำเร็จ จึงยังยืนยันสถานะระบบไม่ได้ กรุณาลองโหลดใหม่ หากยังไม่สำเร็จ ให้ตรวจ Deployment, Executions และสิทธิ์ Admin ปัจจุบัน';}
- finally{nvHealthBusy=false;controls.forEach(id=>document.getElementById(id).disabled=false);document.getElementById('nvHealthPrev').disabled=nvHealthPage<=1;document.getElementById('nvHealthNext').disabled=nvHealthPage>=nvHealthPages;}
+ finally{nvHealthBusy=false;controls.forEach(id=>document.getElementById(id).disabled=false);document.getElementById('nvBackupNow').disabled=!nvBackupConfigured||nvBackupBusy||document.getElementById('nvHealthData').hidden;document.getElementById('nvHealthPrev').disabled=nvHealthPage<=1;document.getElementById('nvHealthNext').disabled=nvHealthPage>=nvHealthPages;}
 }
+let nvBackupBusy=false,nvBackupConfigured=false;
+const nvbLabels={VERIFIED:'สำรองและตรวจข้อมูลผ่าน',WAITING:'รอรอบอัตโนมัติครั้งแรก',STALE:'ไม่พบสำรองอัตโนมัติสำเร็จเกิน 26 ชั่วโมง',STARTED:'เริ่มสำรองแล้ว',VERIFYING:'กำลังตรวจสำเนา',RUNNING:'กำลังสำรอง / ตรวจสำเนา',INCOMPLETE:'ยังไม่พบผลจบ กรุณาตรวจ Executions',FAILED:'สำรองไม่สำเร็จ',NOT_CONFIGURED:'ยังไม่ได้ติดตั้งระบบสำรอง',WRONG_CONTEXT:'โปรเจกต์หรือฐานข้อมูลไม่ตรงกับที่ตั้งค่า',TEST_MODE:'โหมดซ้อมกู้คืน — ปิดการส่ง LINE',READ_FAILED:'อ่านสถานะสำรองไม่ได้',BUSY:'ฐานข้อมูลกำลังใช้งาน กรุณาลองใหม่'};
+function nvbLink(id,folder,text){const a=nvhEl('a',text);a.href=folder?'https://drive.google.com/drive/folders/'+encodeURIComponent(id):'https://docs.google.com/spreadsheets/d/'+encodeURIComponent(id)+'/edit';a.target='_blank';a.rel='noopener noreferrer';a.style.marginRight='18px';return a;}
+function nvbRender(b){
+ nvBackupConfigured=!!(b&&b.configured);const host=document.getElementById('nvBackupOverview');
+ if(!b){host.replaceChildren(nvhStat('สถานะ','GAS รุ่นนี้ยังไม่มีระบบสำรอง'));document.getElementById('nvBackupNow').disabled=true;return;}
+ host.replaceChildren(nvhStat('รอบอัตโนมัติ / สถานะ',nvbLabels[b.state]||b.state),nvhStat('สำรองผ่านล่าสุด (ทุกวิธี)',nvhDate(b.lastSuccess&&b.lastSuccess.finishedAt)),nvhStat('สำรองอัตโนมัติผ่านล่าสุด',nvhDate(b.lastAutoSuccess&&b.lastAutoSuccess.finishedAt)));
+ const parts=[b.schedule||'',b.retention||'',b.restoreDrill||''];
+ if(b.visibleTriggerCount!==undefined)parts.push('Trigger ที่ตรวจพบในบัญชีนี้: '+(b.visibleTriggerCount===null?'ตรวจไม่ได้':b.visibleTriggerCount));
+ if(b.logStatus!=='OK')parts.push('ยังอ่าน Backup_Log ไม่ได้');
+ if(b.lastAttempt&&b.lastAttempt.logWarning)parts.push('มีคำเตือนการบันทึกประวัติ ให้ตรวจ Executions');
+ document.getElementById('nvBackupNote').textContent=parts.filter(Boolean).join(' • ');
+ const links=document.getElementById('nvBackupLinks');links.replaceChildren();
+ if(b.folderId)links.append(nvbLink(b.folderId,true,'เปิดโฟลเดอร์สำรอง'));
+ if(b.lastSuccess&&b.lastSuccess.fileId)links.append(nvbLink(b.lastSuccess.fileId,false,'เปิดสำเนาที่ตรวจผ่านล่าสุด'));
+ nvhTable('nvBackupHistory',['เริ่ม / รหัสคำขอ','วิธี / ผู้สั่ง','ผล','จำนวนชีต / แถวข้อมูล','รายละเอียด'],(b.recent||[]).map(r=>[nvhRef(nvhDate(r.startedAt),r.requestId),r.invocation+' / '+r.actor,nvbLabels[r.result]||r.result,r.sheetCount+' / '+r.dataRows,r.result==='VERIFIED'&&r.fileId?nvbLink(r.fileId,false,'เปิดสำเนา'):r.errorSummary||r.errorCode||'กำลังดำเนินการ / ยังไม่พบผลจบ']),'ยังไม่มีประวัติสำรอง');
+ document.getElementById('nvBackupNow').disabled=!nvBackupConfigured||nvBackupBusy;
+}
+function nvbPendingKey(){return 'nextvac_backup_request_'+String(currentUser&&currentUser.username||'');}
+let nvbMemoryRequest='';
+function nvbPending(){try{return sessionStorage.getItem(nvbPendingKey())||nvbMemoryRequest;}catch(e){return nvbMemoryRequest;}}
+function nvbSavePending(id){nvbMemoryRequest=id;try{if(id)sessionStorage.setItem(nvbPendingKey(),id);else sessionStorage.removeItem(nvbPendingKey());}catch(e){}}
+async function nvbStart(){
+ if(nvBackupBusy||nvHealthBusy||!currentUser||currentUser.role!=='Admin'||!nvBackupConfigured)return;
+ const token=currentSessionToken,btn=document.getElementById('nvBackupNow'),msg=document.getElementById('nvBackupMessage');
+ let id=nvbPending();if(!id){id=crypto.randomUUID();nvbSavePending(id);}
+ nvBackupBusy=true;btn.disabled=true;btn.textContent='กำลังสำรองและตรวจข้อมูล…';msg.textContent='กรุณารอ การสำรองอาจใช้เวลาหลายนาที • อ้างอิง '+id;
+ try{
+  const d=await postJson({action:'backupNow',sessionToken:token,requestId:id});
+  if(token!==currentSessionToken)return;
+  if(d.status!=='success')throw Error(d.message||'ยังยืนยันผลไม่ได้');
+  const r=d.backup;
+  msg.textContent=(nvbLabels[r.result]||r.result)+(r.errorSummary?' — '+r.errorSummary:'')+' • อ้างอิง '+id;
+  if(['VERIFIED','FAILED','BUSY'].includes(r.result))nvbSavePending('');
+  else if(Date.now()-Date.parse(r.startedAt)>10*60000){msg.textContent+=' • คำขอเดิมยังไม่มีผลจบ ตรวจไฟล์และ Executions ก่อนเริ่มคำขอใหม่';nvbSavePending('');}
+  if(r.logWarning)msg.textContent+=' • มีคำเตือนการบันทึกประวัติ';
+ }catch(e){msg.textContent='ยังยืนยันผลสำรองไม่ได้ กดปุ่มอีกครั้งเพื่อใช้รหัสคำขอเดิมและตรวจผล โดยไม่สร้างสำเนาซ้ำ • อ้างอิง '+id;}
+ finally{
+  nvBackupBusy=false;btn.textContent=nvbPending()?'ตรวจ / ทำคำขอเดิมต่อ':'สำรองข้อมูลตอนนี้';btn.disabled=!nvBackupConfigured;
+  if(token===currentSessionToken)await nvLoadHealth(nvHealthPage);
+ }
+}
+document.getElementById('nvBackupNow').addEventListener('click',nvbStart);
+
 document.getElementById('nvHealthReload').addEventListener('click',()=>nvLoadHealth(nvHealthPage));
 document.getElementById('nvHealthApply').addEventListener('click',()=>nvLoadHealth(1));
 document.getElementById('nvHealthPrev').addEventListener('click',()=>nvLoadHealth(nvHealthPage-1));
