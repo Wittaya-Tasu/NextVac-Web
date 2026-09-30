@@ -12,7 +12,6 @@
         :root {
             --font-size-main: 12pt;      
             --font-size-header: 15pt;    
-            --font-size-note: 12pt;      
             --font-size-trace: 9pt;     /* 💡 ลดขนาดตัวอักษรลงนิดหน่อย */
             --sig-margin-top: 20px;     /* 💡 ลดพื้นที่ว่างด้านบนลายเซ็นลงครึ่งหนึ่ง */
             --sig-space-height: 30px;   /* 💡 ลดพื้นที่เซ็นชื่อลงให้กระชับขึ้น */
@@ -44,21 +43,22 @@
         .a4-header-text { text-align: center; font-size: var(--font-size-header); font-weight: bold; margin-bottom: 15px; flex-shrink: 0; }
         .info-table { width: 100%; margin-bottom: 15px; font-size: var(--font-size-main); flex-shrink: 0; }
         
-        /* 💡 ปรับปรุงตารางให้กว้างพอดีข้อความและไม่ขึ้นบรรทัดใหม่ */
-        .vaccine-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 10pt; flex-shrink: 0; }
-        .vaccine-table th, .vaccine-table td { 
-            border: 1px solid black; 
-            padding: 4px 8px; 
-            text-align: center; 
-            white-space: nowrap; /* บังคับไม่ให้ข้อความตัดขึ้นบรรทัดใหม่ */
+        /* Schedule report: equal type size and content-based column widths. */
+        .vaccine-table { width: 100%; table-layout: auto; border-collapse: collapse; margin-bottom: 20px; font-size: 10pt; flex-shrink: 0; }
+        .vaccine-table th, .vaccine-table td {
+            border: 1px solid black;
+            padding: 4px 8px;
+            font-size: inherit;
+            line-height: 1.45;
+            text-align: center;
+            white-space: normal;
+            overflow-wrap: anywhere;
         }
-        .vaccine-table .note-col { 
-            text-align: left; 
-            padding-left: 10px; 
-            font-size: var(--font-size-note); 
-            white-space: normal; /* อนุญาตให้เฉพาะช่องหมายเหตุขึ้นบรรทัดใหม่ได้ถ้ายาวเกินไป */
-            width: 100%; /* ดันช่องหมายเหตุให้กินพื้นที่ส่วนที่เหลือทั้งหมด */
-        }
+        .vaccine-table th { white-space: nowrap; }
+        .vaccine-table th:nth-child(-n+2), .vaccine-table td:nth-child(-n+2) { white-space: nowrap; }
+        .vaccine-table th:nth-child(3), .vaccine-table td:nth-child(3),
+        .vaccine-table .note-col { text-align: left; }
+        .vaccine-table tr { break-inside: avoid; }
 
         .signature-section { 
             display: flex; justify-content: space-between; 
@@ -72,16 +72,22 @@
         .sig-space { height: var(--sig-space-height); } 
         .sig-line { border-top: 1px dashed black; width: 80%; margin: 0 auto 5px auto; } 
         
-        /* 💡 เปลี่ยนมายืนด้านบนแทน ไม่ใช้ position absolute แล้ว */
-        .traceability { 
-            font-size: var(--font-size-trace); 
-            color: #64748b; 
-            text-align: right; 
-            display: flex; 
-            justify-content: flex-end; 
-            gap: 15px; 
+        /* Document metadata stays after the signatures, at the bottom of a short report. */
+        .traceability {
+            font-size: var(--font-size-trace);
+            color: #a3a3a3;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 4px 15px;
             width: 100%;
-            margin-bottom: 10px;
+            margin-top: auto;
+            padding-top: 8mm;
+            flex-shrink: 0;
+            break-inside: avoid;
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
         }
 
         /* Dashboard Matrix */
@@ -438,12 +444,6 @@ document.getElementById('nvHealthDays').addEventListener('change',()=>{document.
     </div>
 
     <div class="a4-page" id="a4Paper">
-        <!-- 💡 ย้ายหมายเหตุเอกสารมาไว้บนสุด -->
-        <div class="traceability">
-            <span>พิมพ์เมื่อ: <span id="lblPrintDate"></span></span>
-            <span>รหัสเอกสาร: <span id="lblRefId"></span></span>
-        </div>
-
         <div class="a4-header-text">โปรแกรมวัคซีน : <span id="lblProgName"></span></div>
         <table class="info-table" style="border-collapse: collapse; line-height: 1.8; margin-bottom: 25px;">
             <tr>
@@ -478,10 +478,9 @@ document.getElementById('nvHealthDays').addEventListener('change',()=>{document.
                     <!-- 💡 เอาการตั้งค่าความกว้างออกแบบ % ออก เพื่อให้ระบบจัดความกว้างพอดีคำอัตโนมัติ -->
                     <th>วันที่</th>
                     <th>อายุ(สป.)</th>
-                    <th>เวชภัณฑ์</th>
+                    <th>โปรแกรม</th>
                     <th>รายละเอียด</th>
                     <th class="note-col" style="text-align:center;">หมายเหตุ</th>
-                    <th>สถานะ</th>
                 </tr>
             </thead>
             <tbody id="vaccineTableBody"></tbody>
@@ -502,6 +501,10 @@ document.getElementById('nvHealthDays').addEventListener('change',()=>{document.
                 <div>ผู้จัดการฟาร์ม</div>
                 <div style="margin-top:5px;">วันที่ _______/_______/_______</div>
             </div>
+        </div>
+        <div class="traceability">
+            <span>พิมพ์เมื่อ: <span id="lblPrintDate"></span></span>
+            <span>รหัสเอกสาร: <span id="lblRefId"></span></span>
         </div>
     </div>
 </div>
@@ -1312,7 +1315,7 @@ document.getElementById('nvHealthDays').addEventListener('change',()=>{document.
 
         const trInitial = document.createElement('tr');
         trInitial.style.backgroundColor = "#f8fafc"; 
-        trInitial.innerHTML = `<td>${firstRowDateDisplay}</td><td>${initialAge}</td><td>-</td><td>-</td><td class="note-col"><strong>รับเข้าสุกร</strong></td><td></td>`;
+        trInitial.innerHTML = `<td>${firstRowDateDisplay}</td><td>${initialAge}</td><td>-</td><td>-</td><td class="note-col"><strong>รับเข้าสุกร</strong></td>`;
         tbody.appendChild(trInitial);
 
         const progRows = masterData.programs
@@ -1341,7 +1344,7 @@ document.getElementById('nvHealthDays').addEventListener('change',()=>{document.
             payloadForCart.scheduleData.push({ date: dateDisplay, age: calculatedAge, vac: vacNameFull });
 
             const tr = document.createElement('tr');
-            tr.innerHTML = `<td>${dateDisplay === lastDate ? "" : dateDisplay}</td><td>${calculatedAge}</td><td>${row.vacType || '-'}</td><td>${row.tradeName || '-'}</td><td class="note-col">${row.note || ''}</td><td></td>`;
+            tr.innerHTML = `<td>${dateDisplay === lastDate ? "" : dateDisplay}</td><td>${calculatedAge}</td><td>${row.vacType || '-'}</td><td>${row.tradeName || '-'}</td><td class="note-col">${row.note || ''}</td>`;
             tbody.appendChild(tr);
             lastDate = dateDisplay;
         });
@@ -1542,6 +1545,7 @@ document.getElementById('nvReopenForm').addEventListener('submit', async event =
     }
 });
 </script>
+
 
 </body>
 </html>
