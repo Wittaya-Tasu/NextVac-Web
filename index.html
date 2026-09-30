@@ -220,7 +220,7 @@
     
     <div class="top-bar container dashboard-container">
         <span class="user-info" id="welcomeText">👤 ผู้ใช้งาน: </span>
-        <button class="btn-logout" onclick="location.reload()">🚪 ออกจากระบบ</button>
+        <button type="button" class="btn-primary" style="width:auto;margin:0 8px" onclick="nvsOpenPassword(false)">เปลี่ยนรหัสผ่าน</button><button class="btn-logout" onclick="nvsLogout()">🚪 ออกจากระบบ</button>
     </div>
 
     <div class="tab-menu container dashboard-container" id="vetTabs" style="display:none; padding:10px; background:transparent; box-shadow:none;">
@@ -436,18 +436,16 @@ document.getElementById('nvHealthDays').addEventListener('change',()=>{document.
         <p style="text-align:center; color:#64748b; margin-top:-10px;">(สำหรับเปลี่ยนรหัสเข้าใช้งาน หรือผูกกลุ่ม LINE ให้ฟาร์ม)</p>
         
         <label>เลือกฟาร์มที่ต้องการตั้งค่า</label>
-        <select id="manageFarmSelect"></select>
+        <select id="manageFarmSelect" onchange="nvsLoadManaged()"></select><label>บัญชีฟาร์มที่ต้องการเปลี่ยน Username</label><select id="nvsFarmAccount"></select>
 
         <label style="color:#dc2626;">👉 เปลี่ยน Username หน้าฟาร์ม (เว้นว่างไว้ถ้าไม่เปลี่ยน)</label>
         <input type="text" id="newFarmUser" placeholder="เช่น farm_phayao">
 
-        <label style="color:#dc2626;">👉 เปลี่ยน Password หน้าฟาร์ม (เว้นว่างไว้ถ้าไม่เปลี่ยน)</label>
-        <input type="text" id="newFarmPass" placeholder="เช่น pass1234">
-
         <label style="color:#16a34a;">👉 ผูกรหัส LINE Group ID (ขึ้นต้นด้วยตัว C)</label>
         <input type="text" id="newLineId" placeholder="นำรหัสจากแชทบอทมาวางที่นี่">
 
-        <button id="btnUpdateFarm" class="btn-primary" style="background:#0f172a;" onclick="updateFarmData()">💾 บันทึกข้อมูลฟาร์ม</button>
+        <label>ยืนยันด้วยรหัสผ่านปัจจุบันของคุณ</label><input type="password" id="nvsManagePassword" autocomplete="current-password"><button id="btnUpdateFarm" class="btn-primary" style="background:#0f172a;" onclick="updateFarmData()">💾 บันทึกข้อมูลฟาร์ม</button>
+<hr><h3>รีเซ็ตรหัสผ่าน</h3><p>เลือกรายบัญชี ผู้ใช้ต้องตั้งรหัสใหม่หลังใช้รหัสชั่วคราวครั้งแรก</p><button type="button" onclick="nvsLoadManaged()">โหลดรายชื่อบัญชี</button><label>บัญชีที่จะรีเซ็ต</label><select id="nvsResetAccount"></select><label>รหัสชั่วคราว 15–128 ตัวอักษร</label><input id="nvsResetNew" type="password" autocomplete="new-password"><label>ยืนยันรหัสชั่วคราว</label><input id="nvsResetConfirm" type="password" autocomplete="new-password"><label>รหัสผ่านปัจจุบันของคุณ</label><input id="nvsResetActor" type="password" autocomplete="current-password"><button id="nvsResetButton" class="btn-primary" onclick="nvsReset()">รีเซ็ตรหัสผ่านบัญชีที่เลือก</button><p id="nvsManageMessage" role="status"></p>
     </div>
 
     <div class="container" id="formSection" style="display:none;">
@@ -634,8 +632,8 @@ document.getElementById('nvHealthDays').addEventListener('change',()=>{document.
 
     async function loadMasterData() {
         const [regRes, progRes] = await Promise.all([
-            fetchJson(buildApiUrl("getRegionsAndFarms")),
-            fetchJson(buildApiUrl("getPrograms"))
+            postJson({action:"getRegionsAndFarms",sessionToken:currentSessionToken}),
+            postJson({action:"getPrograms",sessionToken:currentSessionToken})
         ]);
         if (regRes.status !== "success") throw new Error(regRes.message || "ดึงข้อมูลฟาร์มไม่สำเร็จ");
         if (progRes.status !== "success") throw new Error(progRes.message || "ดึงข้อมูลโปรแกรมไม่สำเร็จ");
@@ -668,6 +666,8 @@ document.getElementById('nvHealthDays').addEventListener('change',()=>{document.
             if(data.status === "success") {
                 currentUser = data.user;
                 currentSessionToken = data.sessionToken;
+                document.getElementById('txtPass').value = '';
+                if(data.user.mustChange){nvsOpenPassword(true);btn.disabled=false;btn.innerText='เข้าสู่ระบบ';return;}
                 await loadMasterData();
                 document.getElementById('loginSection').style.display = 'none';
                 document.getElementById('appWrapper').style.display = 'block';
@@ -724,7 +724,7 @@ document.getElementById('nvHealthDays').addEventListener('change',()=>{document.
             
             const vetRegions = new Set();
             Object.keys(masterData.regions).forEach(reg => {
-                if (masterData.regions[reg].some(f => f.vet === currentUser.vetName)) vetRegions.add(reg);
+                if (masterData.regions[reg].length) vetRegions.add(reg);
             });
             vetRegions.forEach(reg => regSelect.add(new Option(reg, reg)));
 
@@ -732,7 +732,7 @@ document.getElementById('nvHealthDays').addEventListener('change',()=>{document.
             mngSelect.innerHTML = '<option value="">-- เลือกฟาร์มที่ต้องการจัดการ --</option>';
             Object.keys(masterData.regions).forEach(reg => {
                 masterData.regions[reg].forEach(f => {
-                    if (f.vet === currentUser.vetName) mngSelect.add(new Option(f.name, f.name));
+                    mngSelect.add(new Option(f.name, f.name));
                 });
             });
             
@@ -784,7 +784,7 @@ document.getElementById('nvHealthDays').addEventListener('change',()=>{document.
         document.getElementById('btnExportPng').disabled = true;
         tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">⏳ กำลังโหลดข้อมูล...</td></tr>';
         
-        return fetchJson(buildApiUrl("getDashboardData"))
+        return postJson({action:"getDashboardData",sessionToken:currentSessionToken})
         .then(data => {
             if(data.status === "success") {
                 currentDashboardData = data.data || [];
@@ -1210,31 +1210,61 @@ document.getElementById('nvHealthDays').addEventListener('change',()=>{document.
         }
     }
 
-    function updateFarmData() {
-        const farm = document.getElementById('manageFarmSelect').value;
-        const newUser = document.getElementById('newFarmUser').value;
-        const newPass = document.getElementById('newFarmPass').value;
-        const newLine = document.getElementById('newLineId').value;
-
-        if(!farm) { alert("กรุณาเลือกฟาร์มก่อนครับ"); return; }
-        if(!newUser && !newPass && !newLine) { alert("กรุณากรอกข้อมูลอย่างน้อย 1 ช่องเพื่ออัปเดตครับ"); return; }
-
-        const btn = document.getElementById('btnUpdateFarm');
-        btn.innerText = "⏳ กำลังบันทึก...";
-        btn.disabled = true;
-
-        postJson({ action: "updateFarmByVet", sessionToken: currentSessionToken, targetFarm: farm, newUsername: newUser, newPassword: newPass, newLineId: newLine }).then(data => {
-            if(data.status === "success") {
-                alert("✅ อัปเดตข้อมูลฟาร์มเรียบร้อยแล้ว!");
-                document.getElementById('newFarmUser').value = "";
-                document.getElementById('newFarmPass').value = "";
-                document.getElementById('newLineId').value = "";
-            } else { alert("❌ เกิดข้อผิดพลาดในการบันทึก"); }
-            btn.innerText = "💾 บันทึกข้อมูลฟาร์ม";
-            btn.disabled = false;
-        }).catch(err => { alert("❌ เชื่อมต่อไม่ได้"); btn.innerText = "💾 บันทึกข้อมูลฟาร์ม"; btn.disabled = false; });
+    async function nvsLogout(){
+        const token=currentSessionToken;
+        try{const r=await postJson({action:'logout',sessionToken:token});if(r.status!=='success')throw new Error(r.message||'ยกเลิก Session ไม่สำเร็จ');location.reload();}
+        catch(e){alert('ยังยืนยันการออกจากระบบไม่ได้ กรุณาลองอีกครั้ง\n'+e.message);}
     }
-
+    let nvsPasswordForced=false;
+    function nvsOpenPassword(forced){
+        nvsPasswordForced=!!forced;
+        document.getElementById('nvsPasswordTitle').textContent=forced?'ตั้งรหัสผ่านใหม่ก่อนใช้งาน':'เปลี่ยนรหัสผ่านของฉัน';
+        document.getElementById('nvsPasswordMessage').textContent=forced?'ใช้รหัสเดิมยืนยัน แล้วตั้งรหัสใหม่ที่ต่างจากเดิม ยาว 15–128 ตัวอักษร':'';
+        document.getElementById('nvsPasswordCancel').textContent=forced?'ออกจากระบบ':'ยกเลิก';
+        document.getElementById('nvsPasswordDialog').showModal();
+    }
+    async function nvsCancelPassword(){if(nvsPasswordForced){await nvsLogout();}else document.getElementById('nvsPasswordDialog').close();}
+    async function nvsChangePassword(event){
+        event.preventDefault();const msg=document.getElementById('nvsPasswordMessage'),btn=document.getElementById('nvsPasswordSave');
+        const oldPassword=document.getElementById('nvsOldPassword').value,newPassword=document.getElementById('nvsNewPassword').value;
+        if(newPassword!==document.getElementById('nvsConfirmPassword').value){msg.textContent='รหัสใหม่ทั้งสองช่องไม่ตรงกัน';return;}
+        btn.disabled=true;msg.textContent='กำลังเปลี่ยนรหัสผ่าน...';
+        try{const r=await postJson({action:'changePassword',sessionToken:currentSessionToken,oldPassword,newPassword});if(r.status!=='success')throw new Error(r.message||'เปลี่ยนรหัสไม่สำเร็จ');alert(r.message);location.reload();}
+        catch(e){msg.textContent=e.message+' หากเครือข่ายขัดข้องหลังบันทึก ให้ลองเข้าสู่ระบบด้วยรหัสใหม่ก่อนทำซ้ำ';}
+        finally{document.getElementById('nvsOldPassword').value='';document.getElementById('nvsNewPassword').value='';document.getElementById('nvsConfirmPassword').value='';btn.disabled=false;}
+    }
+    let nvsManaged=[];
+    async function nvsLoadManaged(){
+        const msg=document.getElementById('nvsManageMessage'),farm=document.getElementById('manageFarmSelect').value;
+        msg.textContent='กำลังโหลดบัญชี...';
+        const farmSelect=document.getElementById('nvsFarmAccount'),resetSelect=document.getElementById('nvsResetAccount');farmSelect.replaceChildren(new Option('-- เลือกบัญชีฟาร์ม --',''));resetSelect.replaceChildren(new Option('-- เลือกบัญชี --',''));
+        try{const r=await postJson({action:'getManagedAccounts',sessionToken:currentSessionToken});if(r.status!=='success')throw new Error(r.message);nvsManaged=r.accounts;
+            for(const a of nvsManaged){if(a.userId!==currentUser.userId)resetSelect.add(new Option(a.username+' | '+a.role+' | '+a.name,a.userId));if(a.role==='Farm'&&a.name===farm)farmSelect.add(new Option(a.username,a.userId));}
+            if(farmSelect.options.length===2)farmSelect.selectedIndex=1;
+            msg.textContent='Admin รีเซ็ตได้ทุกบัญชี สัตวแพทย์รีเซ็ตได้เฉพาะบัญชีฟาร์มที่ดูแล';
+        }catch(e){nvsManaged=[];msg.textContent=e.message||'โหลดไม่สำเร็จ';}
+    }
+    async function nvsReset(){
+        const btn=document.getElementById('nvsResetButton'),msg=document.getElementById('nvsManageMessage');
+        const targetUserId=document.getElementById('nvsResetAccount').value,newPassword=document.getElementById('nvsResetNew').value,actorPassword=document.getElementById('nvsResetActor').value;
+        if(!targetUserId){msg.textContent='กรุณาเลือกบัญชี';return;}
+        if(newPassword!==document.getElementById('nvsResetConfirm').value){msg.textContent='รหัสชั่วคราวไม่ตรงกัน';return;}
+        const target=nvsManaged.find(a=>a.userId===targetUserId);
+        if(!target||!confirm('รีเซ็ตรหัสผ่านของ '+target.username+' ('+target.name+') และยกเลิก Session เดิม?'))return;
+        btn.disabled=true;msg.textContent='กำลังรีเซ็ต...';
+        try{const r=await postJson({action:'resetPassword',sessionToken:currentSessionToken,targetUserId,newPassword,actorPassword});if(r.status!=='success')throw new Error(r.message);msg.textContent=r.message+' ส่งรหัสชั่วคราวให้เจ้าของบัญชีเป็นการส่วนตัว';}
+        catch(e){msg.textContent=(e.message||'เชื่อมต่อไม่ได้')+' หากไม่ทราบผล ให้ตรวจบัญชีก่อนรีเซ็ตซ้ำ';}
+        finally{['nvsResetNew','nvsResetConfirm','nvsResetActor'].forEach(id=>document.getElementById(id).value='');btn.disabled=false;}
+    }
+    async function updateFarmData(){
+        const farm=document.getElementById('manageFarmSelect').value,newUser=document.getElementById('newFarmUser').value,newLine=document.getElementById('newLineId').value,targetUserId=document.getElementById('nvsFarmAccount').value,actorPassword=document.getElementById('nvsManagePassword').value;
+        if(!farm||(!newUser&&!newLine)){alert('เลือกฟาร์มและกรอกข้อมูลที่จะเปลี่ยน');return;}
+        if(newUser&&!targetUserId){alert('โหลดรายชื่อและเลือกบัญชีฟาร์มที่จะเปลี่ยน Username');return;}
+        const btn=document.getElementById('btnUpdateFarm');btn.disabled=true;btn.textContent='กำลังบันทึก...';
+        try{const r=await postJson({action:'updateFarmByVet',sessionToken:currentSessionToken,targetFarm:farm,targetUserId,newUsername:newUser,newLineId:newLine,actorPassword});if(r.status!=='success')throw new Error(r.message);alert('บันทึกแล้ว');document.getElementById('newFarmUser').value='';document.getElementById('newLineId').value='';await nvsLoadManaged();}
+        catch(e){alert(e.message||'เชื่อมต่อไม่ได้ กรุณาตรวจข้อมูลก่อนทำซ้ำ');}
+        finally{document.getElementById('nvsManagePassword').value='';btn.disabled=false;btn.textContent='บันทึกข้อมูลฟาร์ม';}
+    }
     function updateFarms() {
         if(currentUser.role === "Farm") return; 
         const region = document.getElementById('regionSelect').value;
@@ -1242,7 +1272,7 @@ document.getElementById('nvHealthDays').addEventListener('change',()=>{document.
         farmSelect.innerHTML = '<option value="">-- เลือกฟาร์ม --</option>';
         if (region && masterData.regions[region]) {
             masterData.regions[region].forEach(f => {
-                if (currentUser.role === "Vet" && f.vet !== currentUser.vetName) return; 
+                 
                 let opt = new Option(f.name, f.name);
                 opt.dataset.vet = f.vet;
                 opt.dataset.manager = f.manager;
@@ -1598,6 +1628,9 @@ document.getElementById('nvReopenForm').addEventListener('submit', async event =
 });
 </script>
 
+
+<dialog id="nvsPasswordDialog" style="border:0;border-radius:16px;max-width:460px;width:calc(100% - 48px);padding:24px;font-family:Sarabun,sans-serif" oncancel="event.preventDefault()">
+<form onsubmit="nvsChangePassword(event)"><h2 id="nvsPasswordTitle">เปลี่ยนรหัสผ่าน</h2><p>รหัสใหม่ยาว 15–128 ตัวอักษร ใช้ประโยคที่จำได้ ใช้ช่องว่างได้</p><label for="nvsOldPassword">รหัสผ่านปัจจุบัน</label><input id="nvsOldPassword" type="password" autocomplete="current-password" required><label for="nvsNewPassword">รหัสผ่านใหม่</label><input id="nvsNewPassword" type="password" autocomplete="new-password" required><label for="nvsConfirmPassword">ยืนยันรหัสผ่านใหม่</label><input id="nvsConfirmPassword" type="password" autocomplete="new-password" required><p id="nvsPasswordMessage" role="status"></p><button id="nvsPasswordSave" class="btn-primary" type="submit">บันทึกรหัสผ่านใหม่</button><button id="nvsPasswordCancel" type="button" onclick="nvsCancelPassword()">ยกเลิก</button></form></dialog>
 
 </body>
 </html>
