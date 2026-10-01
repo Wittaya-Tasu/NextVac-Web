@@ -604,41 +604,92 @@ document.getElementById('nvHealthDays').addEventListener('change',()=>{document.
         return value;
     }
 
-    async function fetchJson(url, options = {}) {
-        const response = await fetch(url, { redirect: 'follow', cache: 'no-store', ...options });
-        const rawText = (await response.text()).replace(/^\uFEFF/, '').trim();
-        if (!rawText) throw new Error(`เซิร์ฟเวอร์ไม่ส่งข้อมูลกลับมา (HTTP ${response.status})`);
+    // Only read actions may be sent again. Mutation requests are never replayed.
+    const nvpReadActions=new Set(['getAppBootstrap','getDashboardData','getManagedAccounts','getPrograms','getRegionsAndFarms','getSystemHealth','getPerformanceTestInfo']);
+    const nvpDiagnostics=[];
+    window.nextVacDiagnostics=()=>nvpDiagnostics.map(x=>({...x}));
+    function nvpRandom(bytes){
+        const a=new Uint8Array(bytes);crypto.getRandomValues(a);
+        return Array.from(a,x=>x.toString(16).padStart(2,'0')).join('');
+    }
+    function nvpRecord(value){nvpDiagnostics.push(value);if(nvpDiagnostics.length>30)nvpDiagnostics.shift();}
+    function nvpPause(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
+    async function fetchJson(url, options={}) {
+        const controller=new AbortController();
+        const {timeoutMs=30000,...fetchOptions}=options;
+        const timer=setTimeout(()=>controller.abort(),timeoutMs);
         try {
-            const result = normalizeApiText(JSON.parse(rawText));
-            if (result.auditWarning) {
-                alert('⚠️ ' + result.auditWarning + '\nอ้างอิง: ' + (result.actionRequestId || '-'));
+            const response=await fetch(url,{redirect:'follow',cache:'no-store',credentials:'omit',...fetchOptions,signal:controller.signal});
+            const text=(await response.text()).replace(/^\uFEFF/,'').trim();
+            let result;
+            try {result=JSON.parse(text);} catch(e) {
+                const err=new Error('รับผลจากเซิร์ฟเวอร์ไม่สำเร็จ (HTTP '+response.status+')');
+                err.transport=true;err.http=response.status;
+                err.host=response.url?new URL(response.url).hostname:'';throw err;
             }
-            return result;
-        } catch (error) {
-            if (/^<!doctype|^<html/i.test(rawText)) {
-                throw new Error(`GAS ส่งหน้า HTML กลับมาแทน JSON (HTTP ${response.status}) กรุณาตรวจ Deployment และหน้า Executions ใน Apps Script`);
+            if(!response.ok){const err=new Error('เซิร์ฟเวอร์ตอบกลับ HTTP '+response.status);err.transport=true;err.http=response.status;throw err;}
+            if(!result||typeof result!=='object'||typeof result.status!=='string'){
+                const err=new Error('รูปแบบข้อมูลตอบกลับไม่ถูกต้อง');err.transport=true;throw err;
             }
-            throw new Error(`ข้อมูลตอบกลับจาก GAS ไม่ใช่ JSON ที่ถูกต้อง (HTTP ${response.status})`);
+            return normalizeApiText(result);
+        } catch(err) {
+            if(err.name==='AbortError'||err instanceof TypeError){err.transport=true;err.message=err.name==='AbortError'?'เซิร์ฟเวอร์ตอบกลับช้าเกินกำหนด':'การเชื่อมต่อขัดข้อง';}
+            throw err;
+        } finally {clearTimeout(timer);}
+    }
+    async function nvpSend(payload,timeoutMs) {
+        const started=performance.now();
+        try {
+            const data=await fetchJson(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload),timeoutMs});
+            nvpRecord({requestId:payload.clientRequestId,action:payload.action,status:data.status,elapsedMs:Math.round(performance.now()-started),serverMs:data.performance?.serverMs});
+            return data;
+        } catch(e) {
+            nvpRecord({requestId:payload.clientRequestId,action:payload.action,status:'transport_error',http:e.http||0,host:e.host||'',elapsedMs:Math.round(performance.now()-started)});
+            throw e;
         }
     }
-
-    function postJson(payload) {
-        return fetchJson(SCRIPT_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify(payload)
-        });
+    async function postJson(input) {
+        const payload={...input,clientRequestId:nvpRandom(16)};
+        if(payload.action==='login')payload.loginTicket=nvpRandom(32);
+        let result;
+        try {
+            const timeout=payload.action==='backupNow'?300000:payload.action==='login'?35000:nvpReadActions.has(payload.action)?30000:60000;
+            try {result=await nvpSend(payload,timeout);}
+            catch(error){
+                if(!error.transport)throw error;
+                if(payload.action==='login'){
+                    // Fetch the already-computed outcome, never replay credentials.
+                    for(let attempt=0;attempt<3;attempt++){
+                        await nvpPause(1000*(attempt+1));
+                        try {
+                            const recovered=await nvpSend({action:'getLoginResult',loginTicket:payload.loginTicket,clientRequestId:nvpRandom(16)},12000);
+                            if(recovered.status!=='pending'){result=recovered;break;}
+                        } catch(recoveryError){if(!recoveryError.transport)throw recoveryError;}
+                    }
+                    if(!result)throw error;
+                } else if(nvpReadActions.has(payload.action)) {
+                    await nvpPause(500+Math.floor(Math.random()*500));
+                    result=await nvpSend(payload,30000);
+                } else {throw error;}
+            }
+            if(result.auditWarning)alert('⚠️ '+result.auditWarning+'\nอ้างอิง: '+(result.actionRequestId||result.requestId||'-'));
+            return result;
+        } catch(error) {
+            if(error.transport){
+                const mutation=!nvpReadActions.has(payload.action)&&payload.action!=='login';
+                error.message=(mutation?'ยังยืนยันผลรายการไม่ได้ กรุณาตรวจผลก่อนทำซ้ำ':'รับผลจากระบบไม่สำเร็จ กรุณาลองใหม่ภายหลัง')+'\nอ้างอิง: '+payload.clientRequestId;
+            }
+            throw error;
+        } finally {if(payload.loginTicket)delete payload.loginTicket;}
     }
 
+    let nvpInitialDashboard=null;
     async function loadMasterData() {
-        const [regRes, progRes] = await Promise.all([
-            postJson({action:"getRegionsAndFarms",sessionToken:currentSessionToken}),
-            postJson({action:"getPrograms",sessionToken:currentSessionToken})
-        ]);
-        if (regRes.status !== "success") throw new Error(regRes.message || "ดึงข้อมูลฟาร์มไม่สำเร็จ");
-        if (progRes.status !== "success") throw new Error(progRes.message || "ดึงข้อมูลโปรแกรมไม่สำเร็จ");
-        masterData.regions = regRes.data || {};
-        masterData.programs = progRes.data || [];
+        const data=await postJson({action:'getAppBootstrap',sessionToken:currentSessionToken});
+        if(data.status!=='success')throw new Error(data.message||'โหลดข้อมูลไม่สำเร็จ');
+        masterData.regions=data.regions||{};
+        masterData.programs=data.programs||[];
+        nvpInitialDashboard=data.dashboard;
     }
 
     function escapeHtml(value) {
@@ -777,15 +828,20 @@ document.getElementById('nvHealthDays').addEventListener('change',()=>{document.
         if(tabName === 'dashboard') loadDashboardData();
     }
 
+    let nvpDashboardFlight=null;
     function loadDashboardData() {
+        if(nvpDashboardFlight)return nvpDashboardFlight;
+        const expectedSession=currentSessionToken;
+        const initial=nvpInitialDashboard;nvpInitialDashboard=null;
         const tbody = document.getElementById('dashboardTableBody');
         currentFilteredDashboardData = [];
         document.getElementById('btnExportPdf').disabled = true;
         document.getElementById('btnExportPng').disabled = true;
         tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">⏳ กำลังโหลดข้อมูล...</td></tr>';
         
-        return postJson({action:"getDashboardData",sessionToken:currentSessionToken})
+        nvpDashboardFlight = (initial?Promise.resolve(initial):postJson({action:"getDashboardData",sessionToken:expectedSession}))
         .then(data => {
+            if(currentSessionToken!==expectedSession)return;
             if(data.status === "success") {
                 currentDashboardData = data.data || [];
                 nvReopenReasons = data.reopenReasons || [];
@@ -797,8 +853,10 @@ document.getElementById('nvHealthDays').addEventListener('change',()=>{document.
             }
         })
         .catch(err => {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: red; padding:20px;">❌ เชื่อมต่อเซิร์ฟเวอร์ไม่ได้</td></tr>';
-        });
+            if(currentSessionToken!==expectedSession)return;
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: red; padding:20px;">❌ '+escapeHtml(err.message||'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้')+'</td></tr>';
+        }).finally(()=>{nvpDashboardFlight=null;});
+        return nvpDashboardFlight;
     }
 
     function populateDashboardFilters() {
