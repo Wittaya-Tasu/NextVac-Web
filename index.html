@@ -288,6 +288,7 @@ function nvhRender(d){
  nvhTable('nvHealthIssues',['เวลา','แหล่งข้อมูล','เหตุการณ์','ผล','สิ่งที่ควรตรวจ / อ้างอิง'],d.issues.map(r=>[nvhDate(r.time),r.source,r.event,nvhBadge(r.result),nvhRef(r.detail,r.reference)]),'ไม่พบเหตุการณ์ในข้อมูลที่อ่านได้ โปรดดูขอบเขตการตรวจด้านล่าง');
  nvhTable('nvHealthChecks',['ชีต','ผลตรวจ','ขอบเขต'],d.checks.map(c=>[c.name,nvhBadge(c.status),c.scanned===undefined?'การอ่านชีต / หัวคอลัมน์':c.scanned+' / '+c.totalRows+' แถวข้อมูล'+(c.truncated?' · อ่านเฉพาะส่วนล่าสุด':'')]));
  nvbRender(d.backup);
+ if(d.readiness){const r=d.readiness;document.getElementById('nvBackupNote').textContent+=' • '+r.environment+' / '+r.release+' • ตรวจรหัสผ่าน: '+(r.security?r.security.result+' ('+nvhDate(r.security.checkedAt)+')':'ยังไม่ได้ตรวจ');}
  document.getElementById('nvHealthData').hidden=false;
 }
 async function nvLoadHealth(page=1){
@@ -320,7 +321,7 @@ function nvbRender(b){
  nvhTable('nvBackupHistory',['เริ่ม / รหัสคำขอ','วิธี / ผู้สั่ง','ผล','จำนวนชีต / แถวข้อมูล','รายละเอียด'],(b.recent||[]).map(r=>[nvhRef(nvhDate(r.startedAt),r.requestId),r.invocation+' / '+r.actor,nvbLabels[r.result]||r.result,r.sheetCount+' / '+r.dataRows,r.result==='VERIFIED'&&r.fileId?nvbLink(r.fileId,false,'เปิดสำเนา'):r.errorSummary||r.errorCode||'กำลังดำเนินการ / ยังไม่พบผลจบ']),'ยังไม่มีประวัติสำรอง');
  document.getElementById('nvBackupNow').disabled=!nvBackupConfigured||nvBackupBusy;
 }
-function nvbPendingKey(){return 'nextvac_backup_request_'+String(currentUser&&currentUser.username||'');}
+function nvbPendingKey(){return 'nextvac_backup_request_'+NEXTVAC_ENVIRONMENT+'_'+SCRIPT_URL+'_'+String(currentUser&&currentUser.username||'');}
 let nvbMemoryRequest='';
 function nvbPending(){try{return sessionStorage.getItem(nvbPendingKey())||nvbMemoryRequest;}catch(e){return nvbMemoryRequest;}}
 function nvbSavePending(id){nvbMemoryRequest=id;try{if(id)sessionStorage.setItem(nvbPendingKey(),id);else sessionStorage.removeItem(nvbPendingKey());}catch(e){}}
@@ -563,6 +564,8 @@ document.getElementById('nvHealthDays').addEventListener('change',()=>{document.
     // ==========================================
     // ⚠️ นำ URL เว็บแอปจาก Google Apps Script มาวางที่นี่ครับ
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw3cIvRIR2-65excyOL24QqT6EMRHZlMauHlEOOCLAx4O65xbOxs0MDvFEpfLjqJc_S/exec';
+    const NEXTVAC_ENVIRONMENT = 'PRODUCTION';
+    const NEXTVAC_RELEASE = '20261002-readiness1';
     // ==========================================
     
     let masterData = { regions: {}, programs: [] };
@@ -576,13 +579,13 @@ document.getElementById('nvHealthDays').addEventListener('change',()=>{document.
     let currentFarmForCart = "";
 
     window.onload = () => {
+        const badge=document.createElement('div');badge.id='nextvacEnvironment';
+        badge.textContent=NEXTVAC_ENVIRONMENT==='RESTORE_TEST'?'ระบบทดสอบ • ไม่ส่ง LINE':'ระบบจริง';
+        badge.style.cssText='position:fixed;right:12px;bottom:10px;z-index:99999;padding:6px 12px;border-radius:8px;font-size:13px;background:'+(NEXTVAC_ENVIRONMENT==='RESTORE_TEST'?'#fff0b3':'#e2f3e9')+';color:#18372a';
+        document.body.append(badge);
         document.getElementById('loading').style.display = 'none';
         document.getElementById('loginSection').style.display = 'block';
     };
-
-    function buildApiUrl(action) {
-        return `${SCRIPT_URL}?action=${encodeURIComponent(action)}&sessionToken=${encodeURIComponent(currentSessionToken)}`;
-    }
 
     function repairTextEncoding(value) {
         if (typeof value !== 'string' || !/[ÃÂà¸à¹]/.test(value) || typeof TextDecoder === 'undefined') return value;
@@ -637,10 +640,26 @@ document.getElementById('nvHealthDays').addEventListener('change',()=>{document.
             throw err;
         } finally {clearTimeout(timer);}
     }
+    let nvePreflight=null;
+    async function nveCheckEnvironment(){
+        if(!nvePreflight)nvePreflight=(async()=>{
+            if(!/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec$/.test(SCRIPT_URL))throw new Error('กรุณาตั้ง URL ของ GAS สำหรับระบบนี้');
+            let r;
+            for(let attempt=0;attempt<2;attempt++){
+                try{r=await fetchJson(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'getEnvironment'}),timeoutMs:20000});break;}
+                catch(e){if(!e.transport||attempt===1)throw e;await nvpPause(500);}
+            }
+            if(r.status!=='success'||r.environment!==NEXTVAC_ENVIRONMENT||r.release!==NEXTVAC_RELEASE)throw new Error('เว็บและ GAS เป็นคนละระบบหรือคนละรุ่น กรุณาตรวจการติดตั้งก่อนเข้าสู่ระบบ');
+        })().catch(e=>{nvePreflight=null;throw e;});
+        return nvePreflight;
+    }
     async function nvpSend(payload,timeoutMs) {
         const started=performance.now();
+        try{await nveCheckEnvironment();}catch(e){e.beforeRequest=true;throw e;}
+        payload={...payload,environment:NEXTVAC_ENVIRONMENT};
         try {
             const data=await fetchJson(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload),timeoutMs});
+            if(data.environment&&data.environment!==NEXTVAC_ENVIRONMENT)throw new Error('ENVIRONMENT_MISMATCH');
             nvpRecord({requestId:payload.clientRequestId,action:payload.action,status:data.status,elapsedMs:Math.round(performance.now()-started),serverMs:data.performance?.serverMs});
             return data;
         } catch(e) {
@@ -656,7 +675,7 @@ document.getElementById('nvHealthDays').addEventListener('change',()=>{document.
             const timeout=payload.action==='backupNow'?300000:payload.action==='login'?35000:nvpReadActions.has(payload.action)?30000:60000;
             try {result=await nvpSend(payload,timeout);}
             catch(error){
-                if(!error.transport)throw error;
+                if(error.beforeRequest||!error.transport)throw error;
                 if(payload.action==='login'){
                     // Fetch the already-computed outcome, never replay credentials.
                     for(let attempt=0;attempt<3;attempt++){
